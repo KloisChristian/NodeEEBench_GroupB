@@ -8,6 +8,8 @@ So far a BASYS3 board, Arduino Maker WIFI 1010 and a RaspberryPi Zero with Digil
 
 ![BASYS3 ADC DAC Setup](ImagesS/BASYS3_V04.png "Basys3 ADC DAC")
 
+![Browser User Interface](ImagesS/NodeEEBenchUI01.png "NodeEEBench User Interface")
+
 Subdirectory Xilinx contains the bit file and all sources for the BASYS3 Board.
 Subdirectory Arduino contains sketches for Arduino Maker WiFi 1010 and R2R DAC and Serial C DAC.
 
