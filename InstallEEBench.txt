@@ -1,0 +1,55 @@
+8.11.2023 12:45
+ https://gist.github.com/massahud/321a52f153e5d8f571be
+  Get node binary (node.exe) from http://nodejs.org/download/
+  Create the folder where node will reside and move node.exe to it
+  Download the last zip version of npm from http://nodejs.org/dist/npm
+  Unpack the zip inside the node folder
+  Download the last tgz version of npm from http://nodejs.org/dist/npm
+  Open the tgz file and unpack only the file bin/npm (without extension) directly on the node folder.
+  Add the the node folder and the packages/bin folder to PATH
+  On a command prompt execute npm install -g npm to update npm to the latest version
+  Now you can use npm and node from windows cmd or from bash shell like Git Bash of msysgit.
+12:55
+  NodeJS install:
+  Get zip file from:  https://nodejs.org/download/release/v20.9.0/
+  Unzip to C:\temp\EEBench\node
+13:00
+  How to get a command prompt  
+  https://personalpages.hs-kempten.de/~vollratj/Projekte/2023_ResearchSummary.html
+  Download Xilinx VHDL files: https://personalpages.hs-kempten.de/~vollratj/Projekte/DataConverter/EEBench_V06.zip
+  Download Node js command files: https://personalpages.hs-kempten.de/~vollratj/Projekte/DataConverter/NodeEEBench_V06.zip
+  Extract NodeEEBench_V06
+  Extract FPGA Xilinx files EEBench_V06
+  Create cmd.bat with line "start cmd.exe" to be able to open command line 
+Xilinx FPGA programming?
+  Connect BASYS3 via USB
+  13:12 Start Vivado
+    Analog to Instructions: https://personalpages.hs-kempten.de/~vollratj/Labor_Digitaltechnik/Digi_P_V3_Vivado.html
+   Create new project; Add Sources, Add constraints, Default Part:  xc7a35tcpg236-1
+  13:20
+  13:35  
+    Make EEBench to top: Sources EEBench right click set as top
+	XADC missing
+	Window, IP catalog, FPGA Features and Design, XADC -> ???? section XADC wizard Research
+    Generate Bitstream
+	Program and Debug, Open Hardware Manager, Open Target 
+	Program and Debug, Open Hardware Manager, Program Devices 
+  13:44
+Start NodeJS EEBench
+   start Batch file NodeEEBench.bat in command line cmd.bat 
+   Error: node not found  
+    set PATH=%PATH%;C:\temp\EEBench\node
+  Cannot find module 'open'
+   npm install open
+  Change require('open') to import('open')
+  Cannot find module 'express'
+   npm install express
+   npm install serialport
+   npm install socket.io
+  Command line instruction: Mode
+  Lists all COM ports and gives COM4 for BASYS3
+  ServerEEBench.js -> change line 44 path: "COM4"
+  Browser can open http://localhost:3000/
+14:05
+   
+      

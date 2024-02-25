@@ -1,0 +1,20 @@
+{
+  "name": "eebench",
+  "version": "1.0.0",
+  "description": "electronics bench",
+  "main": "ServerEEBench.js",
+  "scripts": {
+    "test": "help"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bufferutil": "^4.0.7",
+    "express": "^4.18.2",
+    "open": "^8.4.0",
+    "serialport": "^10.4.0",
+    "socket.io": "^4.5.3",
+    "stream": "0.0.2",
+    "utf-8-validate": "^5.0.10"
+  }
+}

@@ -1,0 +1,1 @@
+--relax --debug typical --mt auto -L xil_defaultlib -L secureip -L xpm --snapshot XADC_EE xil_defaultlib.XADC_EE -log elaborate.log

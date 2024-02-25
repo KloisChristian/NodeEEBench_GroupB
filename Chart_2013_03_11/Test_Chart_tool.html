@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en" lang="en" xmlns="http://www.w3.org/1999/xhtml">
+ <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   <title>Charts im Webbrowser HTML5</title>
+ <link rel="stylesheet" type="text/css" href="../css/style.css" media="all" />
+
+<!-- Prettify Google -->
+<link href="../google-code-prettify/src/prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="../google-code-prettify/src/prettify.js"></script>
+<script type="text/javascript" src="../google-code-prettify/src/lang-vhdl.js"></script>
+
+ </head>
+   <script type="text/javascript" src="Chart_basic.js"></script>
+  <body>
+  <div id="header">
+  <div id="nheader1" style="background-color:#0067a5;color:#FFFFFF" align="right" >
+     <a href="http://www.hochschule-kempten.de" style="color:#FFFFFF"> Hochschule Kempten &nbsp; &nbsp; &nbsp; </a>
+  </div>
+  <div id="nheader2" style="background-color:#05adb5;color:#FFFFFF" align="right" >
+     <a href="http://www.hochschule-kempten.de/about-kempten-university/faculties/electrical-engineering.html?L=1" style="color:#FFFFFF">
+	 Fakultät Elektrotechnik &nbsp; &nbsp; &nbsp;
+  </div>
+  <div id="nheader3" style="background-color:#f18700;color:#FFFFFF" align="right" >
+    <a href="http://www.hochschule-kempten.de/metanavigation/personen/detailansicht.html?typo3state=persons&lsfid=1000430" style="background-color:#f18700;color:#FFFFFF"> 
+	 Fachgebiet Elektronik, Prof. Vollrath &nbsp; &nbsp; &nbsp;</a>
+  </div>
+  </div>
+
+ <table>
+<tr>
+<td>
+</td>
+<td>
+ <h1> Diagramme in HTML5 Canvas darstellen </h1>
+ 
+ Author: Jörg Vollrath<br><br><br><br>
+ 
+ 
+ Ein Javascript 'Chart_basic.js' zur graphischen Darstellung von Werten wird hier vorgestellt und getestet. <br>
+ Es bietet grundlegende Funktionen die in 500 Zeilen Javascript (17KByte) implementiert wurden.<br> 
+ Da die Werte direkt im HTML Quellcode erzeugt werden stehen Sie für weitere Rechnungen zur Verfügung.<br>
+ Man könnte die Werte auch als Tabelle ausgeben.<br>
+ Es sollten zu Testzwecken 4 Graphen mit linearer und logarithmischer Teilung dargestellt werden .<br>
+ 
+      <canvas id="Chartid" width="600" height="400">   </canvas> <br>
+ 
+   <div id="container1">
+      <canvas id="Chartid1" width="100" height="50">   </canvas>
+      <canvas id="Chartid3" width="600" height="400">   </canvas>
+      <canvas id="Chartid4" width="600" height="400">   </canvas>
+      <div id="controlsidx"> </div>
+      <script type="text/javascript"> 
+<!-- Begin
+	    var x=new Array();  
+		for (var i=0; i<20; i++) {
+           x[i]= i-4; 
+		   x[i+20]=i/20; 
+		   x[i+40]=5*Math.sin(x[i]); 
+		   x[i+60]=7*Math.cos(x[i]);
+		}
+	  var leg="X=1,X=2,X=3";
+	  setLegend(leg);
+	  ScatterPlot("Chartid","Chartname",x,20,"xaxisname","lin","auto","yaxisname","lin","auto","Grid");
+	  drawLabelxy(5,"lin",8,"lin","Maximum", "center", "top");
+	  setStroke(5,'#0000ff'); 
+      drawLinexy(-5,"lin",8,"lin",10,6)
+	  leg=new Array();
+	  ScatterPlot("Chartid1","Chartname",x,20,"xaxisname","lin","auto","yaxisname","lin","auto","nogrid");
+	    var x=new Array();  
+		for (var i=0; i<20; i++) {
+           x[i]= i-4; 
+		   x[i+20]=1+x[i]*x[i]*x[i]*x[i]; 
+		   x[i+40]=1+0.1*Math.exp(x[i]); 
+		}
+	  ScatterPlot("Chartid3","Chartname",x,20,"xaxisname","lin","auto","yaxisname","log","auto","nogrid");
+	  ScatterPlotX("Chartid4","Chartname",x,20,"xaxisname","lin","auto","yaxisname","lin","auto","Fine");
+	  drawLinexy(-5,"lin",1E5,"lin",10,3E5)
+  //  End -->
+	  </script>
+Bei Click auf die Grafik werden die Werte in einer Tabelle dargestellt, wenn 'ScatterPlotX' verwendet wird.<br> 	  
+	</div>
+<h2> Verwendung </h2>
+<br>
+Es wird nur die Datei 'Chart_basic.js' benötigt und im HTML Dokument verwendet.<br>
+Speichern Sie einfach diese Webseite lokal ab.<br>
+Als erstes definiert man einen Platzhalter für die Grafik mit dem Canvas-Element.<br> 
+Um zwei Sinusfunktionen und eine Gerade darzustellen, kann man mit Javascript 
+die Werte direkt in der HTML Datei erezugen.<br>
+
+Dann ruft man die Funktion 'ScatterPlot' auf.<br>
+<pre class="prettyprint linenums">
+	  ScatterPlot("Chartid","Chartname",x,20,"xaxisname","lin","auto","yaxisname","lin","auto","nogrid");
+</pre>
+  Chartid ist die id des Canvas Elements.<br>
+  Chartname wird als Überschrift aus gegeben.<br>
+  Dann kommt ein Array x und die Anzahl der Werte pro Kurve, hier im Beispiel 20.<br>
+  xaxisname wird an der x Achse ausgegeben.<br>
+  Der Typ der Achse kann als "lin" oder "log" gewählt werden.<br>
+  Sie Skalierung folgt entweder mit "auto" oder mit "minmax".<br><br>
+   
+  Bei der linearen Skalierung kann man mit einer nachgestellten Null die Null einschliessen: "auto0" oder "minmax0".<br>
+  Zum Schluss wird definiert, ob ein Gitter dargestellt werden soll: "Fine","Grid" oder "nogrid".<br> 
+
+  <br>
+  Hier der HTML/Javascript Quelltext für 2 Graphen:<br>
+<pre class="prettyprint linenums">
+      &ltcanvas id="Chartid" width="600" height="400">   &lt/canvas> &ltbr>
+ 
+   &ltdiv id="container1"&gt
+      &ltcanvas id="Chartid1" width="100" height="50"&gt   &lt/canvas&gt
+      &ltdiv id="controlsidx"&gt &lt/div&gt
+      &ltscript type="text/javascript"&gt 
+&lt!-- Begin
+	    var x=new Array();  
+		for (var i=0; i&lt20; i++) {
+           x[i]= i-4; 
+		   x[i+20]=i/20; 
+		   x[i+40]=5*Math.sin(x[i]); 
+		   x[i+60]=7*Math.cos(x[i]);
+		}
+	  ScatterPlot("Chartid","Chartname",x,20,"xaxisname","lin","auto","yaxisname","lin","auto","nogrid");
+	  drawLabelxy(5,"lin",8,"lin","Maximum", "center", "top")
+	  ScatterPlot("Chartid1","Chartname",x,20,"xaxisname","lin","auto","yaxisname","lin","auto","nogrid");
+  //  End --&gt
+	  &lt/script&gt
+
+</pre>	
+Man kann die Daten auch per Javascript aus einem div-Abschnitt holen.<br>
+Setzt man <pre> style="display:none" </pre> werden die Daten verborgen.<br>
+
+<div id="Daten1" style="display:block">
+<pre>
+
+10,1,10
+20,2,-10
+30,3,10
+40,4,-10
+</pre>
+</div>
+      <canvas id="Chartid5" width="400" height="300">   </canvas>
+
+      <script type="text/javascript"> 
+<!-- Begin
+	    var x1=new Array();
+        var x1text=document.getElementById("Daten1").innerHTML;
+		var x1Lines = x1text.split('\n');
+		var npoints=x1Lines.length-4;
+		for (var i=2; i<x1Lines.length-2; i++) { // erste und letzte Zeile <pre>
+   		   // alert(x1Lines[i]+"x"+npoints);     // Debugging
+		   var x1element = x1Lines[i].split(',');
+  		   for (var j=0; j<x1element.length; j++) {
+            x1[i-2+j*npoints]= x1element[j]; 
+			}
+        }
+		ScatterPlot("Chartid5","Daten im Text",x1,npoints,"xaxisname","lin","minmax","yaxisname","lin","auto","Grid");
+  //  End -->
+	  </script>
+
+<br>
+Mit der Funktion <br>
+<pre class="prettyprint linenums">
+  function drawLabelxy(x,xstyp,y,ystyp,text,base, align)
+</pre>
+kann man die Grafik mit Text Beschriften, wobei man als Bezugskoordinatensystem nicht das Canvas-Element hat,
+sondern die x und y Achsen.<br>
+xstyp und ystyp sind "lin" oder "log" damit richtig skaliert wird.<br>
+x und y geben die Zielwerte für die Position des Textes an.<br>
+base kann "Top","Bottom" oder "Middle" sein.<br>
+align kann "start", "end", "left", "center", or "right" sein.<br>
+<br>
+Man kann auch eine Linie in den Graphen zeichnen.<br>
+<pre class="prettyprint linenums">
+  function drawLinexy(x,xstyp,y,ystyp,x1,y1) {
+</pre>
+Mit folgender Funktion kann man die Dicke lw und Farbe color, 
+als Hexadezimalstring z.B. '#0000ff' für Blau, der Linie setzen.
+<pre class="prettyprint linenums">
+  function setStroke(lw,color) 
+</pre>
+
+Eine Legende wird durch Aufruf von setLegend vor der Zeichenfunktion dargestellt.
+<pre class="prettyprint linenums">
+	  var leg="X=1,X=2,X=3";
+	  setLegend(leg);
+</pre>
+
+<h2> Table to chart </h2> 
+Der folgende Abschnitt legt die Achsen und Formatierung fest.<br>
+      <span id="chartCN">Test</span><br><br> 
+   X: <span id="chartX">Anzahl schritte</span>, <span id="chartXL">lin</span>, 
+     <span id="chartXSC">minmax</span><br> Y:<span id="chartY">Anzahl ereignisse</span>,
+	 <span id="chartYL">lin</span>, <span id="chartYSC">auto</span><br>
+      <span id="chartGR">Grid</span><br><br> 
+      <table id="chartTB" border="1"><tbody>
+        <tr><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>1</td><td>2</td><td>1</td></tr>
+        <tr><td>2</td><td>4</td><td>2</td></tr>
+        <tr><td>3</td><td>9</td><td>3</td></tr>
+       </table>
+
+      <script type="text/javascript"> 
+<!-- Begin
+		tableChart("chartTB",400,400);
+  //  End -->
+	  </script>
+<br>
+Dies ist der entsprechende JavaScript code.<br>
+<pre class="prettyprint linenums">
+      &lt;span id="chartCN"&gt;Test&lt;/span&gt;&lt;br&gt;&lt;br&gt; 
+   X: &lt;span id="chartX"&gt;Anzahl schritte&lt;/span&gt;, &lt;span id="chartXL"&gt;lin&lt;/span&gt;, 
+     &lt;span id="chartXSC"&gt;minmax&lt;/span&gt;&lt;br&gt; 
+   Y:&lt;span id="chartY"&gt;Anzahl ereignisse&lt;/span&gt;,
+	 &lt;span id="chartYL"&gt;lin&lt;/span&gt;, &lt;span id="chartYSC"&gt;auto&lt;/span&gt;&lt;br&gt;
+      &lt;span id="chartGR"&gt;Grid&lt;/span&gt;&lt;br&gt;&lt;br&gt; 
+      &lt;table id="chartTB" border="1"&gt;&lt;tbody&gt;
+        &lt;tr&gt;&lt;td&gt;0&lt;/td&gt;&lt;td&gt;0&lt;/td&gt;&lt;td&gt;0&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td&gt;1&lt;/td&gt;&lt;td&gt;2&lt;/td&gt;&lt;td&gt;1&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td&gt;2&lt;/td&gt;&lt;td&gt;4&lt;/td&gt;&lt;td&gt;2&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td&gt;3&lt;/td&gt;&lt;td&gt;9&lt;/td&gt;&lt;td&gt;3&lt;/td&gt;&lt;/tr&gt;
+       &lt;/table&gt;
+
+      &lt;script type="text/javascript"&gt; 
+&lt;!-- Begin
+		tableChart("chartTB",400,400);
+  //  End --&gt;
+	  &lt;/script&gt;
+</pre>	
+
+
+<br>
+<br>
+<h1> Geschichte </h1> 
+<br>   
+<h2> Entwicklungsaufwand </h2>
+<br>   
+   ca. 40 Stunden über 2 Monate verteilt.
+<br>   
+<br>   
+<br>   
+<h2>  Version 0 19.10.2012: </h2>
+<br>   
+
+   - Lineare Darstellung mit schönen Achsen. <br>
+   - Marker werden bei den Linien dargestellt. <br>
+   - Logarithmische Darstellung wurde implementiert. <br>
+   - Ein grobes und feines Gitter kann aktiviert werden. <br>
+<br>   
+<h2>  ToDo: </h2>
+<br>   
+
+   - Formatierung großer Zahlen an den Achsen. <br>
+   - Darstellung von Punkten ohne Verbindung. <br>
+   - Implementierung eines Boxplots mit einem Histogramm. <br>
+   - Text Skalierung. <br>
+   
+ <h3> Wie kann man die Darstellung schön skalieren? </h3>
+
+ <br>
+   Es gibt eine Bildschirmauflösung in dpi. <br>
+   Es gibt eine Bildschirmgröße 8..15". <br>
+   Es gibt eine Fenstergröße des Browsers. <br>
+   Es gibt die Canvasgröße und Schriftgröße. <br>
+   Wie lautet die Skalierungsformel? <br>
+<br>   
+<br>   
+<br>   
+
+</td>
+</tr>
+</table>
+
+<!-- END: Content of extension "ts_mit", plugin "tx_tsmit_pi1" -->
+Revision: 002 Date: 15.January.2015
+	  <div id="footer" style="background-color:#0067a5;color:#FFFFFF">
+<br>
+ &nbsp; Hochschule für angewandte Wissenschaften Kempten, Jörg Vollrath, Bahnhofstraße 61 · 87435 Kempten<br>
+ &nbsp; Tel. 0831/25 23-0 · Fax 0831/25 23-104 · E-Mail: joerg.vollrath(at)fh-kempten.de <br>
+ <a href="http://www.hochschule-kempten.de/metanavigation/impressum.html"> 
+  <div style="background-color:#0067a5;color:#FFFFFF"> Impressum </div> </a>
+ </div>
+
+  <script type="text/javascript"> 
+  <!-- Begin
+   document.addEventListener("load", prettyPrint());
+  //  End -->
+  </script>
+
+ </body>
+</html>

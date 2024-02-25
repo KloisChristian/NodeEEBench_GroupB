@@ -1,0 +1,158 @@
+<html lang="en">
+  <head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" type="text/css" href="../css/style.css" media="all" />
+    <title>Trigger EEBench</title>
+ <style>
+</style> 
+  </head>
+  
+<!-- socket.io Google -->
+<script src="../node_modules/socket.io/client-dist/socket.io.js"></script>
+<!-- JQuery -->
+<SCRIPT SRC="../scripts/jquery.js"> </SCRIPT>
+<!-- Chart -->
+   <script type="text/javascript" src="../Chart_2013_03_11/Chart_basic.js"></script>
+<!-- FFT -->
+  <script type="text/javascript" src="../FFT/dspFFT.js"></script>
+<!-- Signalgenerator-->
+  <body>
+  <div id="headx" style="display:block">
+  <div id="nheader1" style="background-color:#0067a5;color:#FFFFFF" align="right" >
+     <a href="http://www.hochschule-kempten.de" style="color:#FFFFFF"> Hochschule Kempten &nbsp; &nbsp; &nbsp; </a>
+  </div>
+  <div id="nheader2" style="background-color:#05adb5;color:#FFFFFF" align="right" >
+     <a href="http://www.hochschule-kempten.de/about-kempten-university/faculties/electrical-engineering.html?L=1" style="color:#FFFFFF">
+	 Fakult&auml;t Elektrotechnik &nbsp; &nbsp; &nbsp;
+  </div>
+  <div id="nheader3" style="background-color:#f18700;color:#FFFFFF" align="right">
+     <a href="Elektronik.html" style="background-color:#f18700;color:#FFFFFF"> 
+	 Elektronik &nbsp; &nbsp; &nbsp;</a>
+    <a href="http://www.hochschule-kempten.de/metanavigation/personen/detailansicht.html?typo3state=persons&lsfid=1000430" style="background-color:#f18700;color:#FFFFFF"> 
+	 Fachgebiet Elektronik, Prof. Vollrath &nbsp; &nbsp; &nbsp;</a>
+  </div>
+  </div>
+  <br>
+
+<h1>Trigger</h1>
+30.11.2022 Joerg Vollrath<br>
+<br>
+Today we want to look at the trigger of EEBench.<br>
+
+<h2>User interface</h2>
+<br>
+The user interface shows under the tab OSC the source, condition and level.<br>
+Source can be AWG1, C1, C2, C3 or C4. <br>
+Condition can be falling or rising.<br>
+The level can be a text input or a list entry (500 mV, 1 V, 2 V, 3 V).<br>
+<br>
+
+<h2>HTML code</h2>
+<br>
+Lets look at the source code in NEEBench.html. NEEBench contains css, html and Javscript elements.<br>
+The div (id="tab2") contains the oscilloscope.<br>
+There we find the trigger table row.<br>
+Source has the select box (id="trgSrc") and condition (id="trgEdge").<br> 
+Level has a combobox with text input (id="trigLevelVal") and selection list (id="trigLevelValS") <br>
+Attached are onclick events: onclick="comboBox('trigLevel','Val','CB',0,voltRange,'V')"<br>
+
+<h2>Javascript for comboBox click</h2>
+<br>
+Lets look at the function comboBox in NEEBench_V05.html.<br>
+<br>
+function comboBox(id,minmax,nr,slider,range,unit)<br>
+<br>
+Variable nr initiates the switch between textbox or selectbox<bR>
+Since this was also used for the slider, it can update "Min", "Max" or "Val" fields (minmax variable).<br>
+Here only "Val" is used.<br> 
+Variable id is "trigLevel".<br>
+It seems the range was used in an old version, but it is not needed anymore.<br>
+Let's eliminate it. Since it is a major change, first I do a backup of NEEBench_V05.html<br>
+Then all comboBox functions are modified.<br>
+The comboBox is heavily used in AWG1 so functionality is verified there.<br>
+It was noticed, that by clicking on Min or Max selectbox also the value was modified.<br>
+The code was improved with an if clause.<br>
+Updating "Val" was only done, if "Val" is bigger than Max or smaller than Min.<br>
+<pre> 
+	if  (((minmax == "Max") && (document.getElementById(id + "Val").value &gt; valX) ) 
+	     || ((minmax == "Min") && (document.getElementById(id + "Val").value &lt; valX) )){
+	    document.getElementById(id + "Val").value = valX;
+	}	
+</pre>
+
+<h2>Trigger function</h2>
+<br>
+Trigger was implemented in socket.on('newData', function (data).<br>
+There is a comment: Look for trigger  and transfer triggered data.<br>
+The field "trigLevelVal" is not evaluated but set to 100, since the transfered data are still just code values.<br>
+First ADC code data scaling with ADC range and offset has to be implemented.<br>
+This is done at this point of time with a fixed range and offset for all channels.<br>
+<pre>
+				 var factor = 1.0/(64*1024-1);
+				 var offset = 0;
+for ..
+				    dataOSC1[i + dataMax] = dataOSC[i + currCon + dataMax] * factor * 3.3 + offset; // AWG 3.3 V
+				    dataOSC1[i + 2 * dataMax] = dataOSC[i + currCon + 2 * dataMax] * factor + offset;
+..
+</pre>
+The maximum voltage of 1.0 Volt and maximum code (64*1024-1) makes a factor for scaling of code values.<br>
+There is a difference for AWG1 (3.3 V) and XADC (1 V)<br>
+<br>
+Again verification of code is needed.<br> 
+For sake of simplicity a min, max, average, amplitude, period and frequency calculation (function chanStats()) is added.<br>
+This displays all values right of the oscilloscope display.<br>
+Average values were compared to Electronic Explorer readings.<br>
+<br>
+There is a voltage divider implemented for the 4 channels: Max Pin 1, Pin2, Pin 3, Pin 4 Min.<br> 
+Electronic Explorer provides the input signal and checks with the oscilloscope as reference.<br>
+Signal measurement DC with voltage divider C1, C2, C3, C4:<br>
+DC: 897 mV, 901 mV, C4  Pin1 <br>
+DC: 470 mV, 478 mV, C2  Pin2<br>
+DC: 50 mV, 56.6 mV C3 Pin3<br>
+DC: 44 mV, 52.9 mV C1 Pin4<br>
+<br>
+Channel assignment has to be investigated and documented.<br>
+<br>
+<h2>Make user interface channel control operational</h2> 
+<br>
+Global lists ( voltDivRange, timeRange, timeBaseRange) for range selection were created.<br>
+function createChannel(baseId, checked, index) creates for all channels HTML code and 
+attaches events for the text input onkeyup="readCRX(e,'pos','s')" (variables event, label, unit) 
+and lists comboBox('base','Val','CB',2,'s').<br>
+<br>
+Time needs different labels and different list so a function addSelectList(id, range, unit) was created.<br> 
+<br>
+The event handlers updateChanFields() and updatePlot() were added to the text input field.<br> 
+<pre>
+function readCRX(key,id,unit) {
+	if (!key) {	key = event; key.which = key.keyCode; }
+	if (key.which == 13) { 
+	   // update value field
+       updateChanFields();
+	   updatePlot(); 
+ 	}
+}
+</pre>
+This should also happen with the function comboBox(id,minmax,nr,slider,unit).<br>
+<pre>
+  if (slider == 2) {   
+      updateChanFields();
+	 updatePlot(); 
+  }  // update oscillocope callback better??
+</pre>
+
+<h2>Trigger verification</h2>
+<br>
+Running the oscilloscope the trigger was checked.<br>
+If the level is out of range the message not triggered appears and the curve is wandering.<br>
+The curve shifts changing condition from rising to falling.<br>
+Changing the trigger level via text input and select box works.<br>
+Changing the trigger input channel works.<br>
+<br>
+A trigger triangle symbol for position and level in the graph is missing.<br> 
+<br>
+
+<br>
+
+	</body>
+	</html>
