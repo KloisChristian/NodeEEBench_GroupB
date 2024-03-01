@@ -173,6 +173,13 @@ Implemented commands with command example values according to FPGA BASYS 3 board
 Example f = 1 kHz, amp = 1 V, offset = 1 V as shown in AWG1: S0000A7C526C9B26C26C9B26C<br>
 <br>
    step = 0000A7C5, amplitude = 26C9B26C, offset = 26C9B26C<br>
+<br>
+Sine for FFT for BASY3:<br>
+FFT looks good for Oscilloscope up to 1 ms/div.<br>
+3 cycles, 1.40851 kHZ, 196608 = 3*64*1024      S000300001364D9361364D936<br>
+11 cycles, 5.16452 kHz, 720896 = 11* 64 *1024            S000B00001364D9361364D936<br>
+101 cycles, 47.419625 kHz, 6619136 = 101 * 64 * 1024	     S006500001364D9361364D936<br>
+<br>
 "T": (length = 21) triangle signal, followed by 20-hex numbers: start, stop, step (16-bit each), repeat (32 bit)<br>
 <br>
 Example pulse f = 1 kHz, amp = 1 V, offset = 1 V as shown in AWG1: T00004D924D920000C350<br>
@@ -581,7 +588,7 @@ var frequencyRange = ["5 MHz","2 MHz","1 MHz","500 kHz","200 kHz","100 kHz", "50
                  "5 kHz","2 kHz","1 kHz","500 Hz","200 Hz","100 Hz","50 Hz","20 Hz","10 Hz",
 				 "5 Hz","2 Hz","1 Hz","500 mHz","200 mHz","100 mHz","50 mHz","20 mHz",
 				 "10 mHz","5 mHz","2 mHz","1mHz","500 uHz","200 uHz","100 uHz"];
-var codeRange = [16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072];
+var codeRange = [1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072];
 var codePos = [-16,-32,-64,-128,-256,-512,-1024,-2048,-4096,-8192,-16384,-32768,-65536,-131072];
 
 function tabAct(x) { // show only active tab
@@ -1205,7 +1212,11 @@ function confOsc() {
 		  // alert(document.getElementById("dataMax").value);
 		  dataMax = parseInt(document.getElementById("dataMax").value); // 512: 0200
 		  cmdO += decToHex(dataMax,4);           // Block size first
-		  timeBase = Math.round(unitToValue(document.getElementById("baseVal").value)/200E-6);
+		  if (currUnit == 0) { // code 
+		    timeBase = Math.round(unitToValue(document.getElementById("baseVal").value));
+		  } else { // time
+		    timeBase = Math.round(unitToValue(document.getElementById("baseVal").value)/200E-6);
+		  }
 		  cmdO += decToHex((timeBase + 1),4);   // Sampling next FPGA 0 and 1 same! 
 		  // update command field
 		  document.getElementById("cmdTxt").value = cmdO;
@@ -1673,22 +1684,7 @@ function changeUnit() {
   // set currUnit
   currUnit = document.getElementById("currUnit").value;
   // strategy changing unit save old scaling activate new scaling
-  if (currUnit == 1) {  // voltage, time 
-    // set time 
-		addSelectList("pos", timeRange, "s");
-		addSelectList("base", timeBaseRange, "s");
-	    // all channels restore rangeVal and offVal 
-		document.getElementById("posVal").value = valueToUnit(channels[0].offsetB) + "s";
-		document.getElementById("baseVal").value = valueToUnit(channels[0].rangeB) + "s";
-		for (var j = 1; j < channels.length; j++) {
-		    addSelectList("range" + channels[j].name, voltRange, "V");
-		    addSelectList("off" + channels[j].name, voltRange, "V");
-			channels[j].range = channels[j].rangeB;                   // get original range, offset from backup B
-			channels[j].offset = channels[j].offsetB;
-			document.getElementById("range" + channels[j].name +"Val").value = valueToUnit(channels[j].range) + " V";
-			document.getElementById("off" + channels[j].name +"Val").value = valueToUnit(channels[j].offset) + " V";
-		}
-  } else {   // activate Code 
+  if (currUnit == 0) {  // code 
 	// set time
 		addSelectList("pos", codePos, "");
 		addSelectList("base", codeRange, "");
@@ -1706,6 +1702,21 @@ function changeUnit() {
 			channels[j].offset = -256*16*8; //
 			document.getElementById("range" + channels[j].name +"Val").value = channels[j].range;
 			document.getElementById("off" + channels[j].name +"Val").value = channels[j].offset;
+		}
+  } else {   // activate voltage time 
+    // set time 
+		addSelectList("pos", timeRange, "s");
+		addSelectList("base", timeBaseRange, "s");
+	    // all channels restore rangeVal and offVal 
+		document.getElementById("posVal").value = valueToUnit(channels[0].offsetB) + "s";
+		document.getElementById("baseVal").value = valueToUnit(channels[0].rangeB) + "s";
+		for (var j = 1; j < channels.length; j++) {
+		    addSelectList("range" + channels[j].name, voltRange, "V");
+		    addSelectList("off" + channels[j].name, voltRange, "V");
+			channels[j].range = channels[j].rangeB;                   // get original range, offset from backup B
+			channels[j].offset = channels[j].offsetB;
+			document.getElementById("range" + channels[j].name +"Val").value = valueToUnit(channels[j].range) + " V";
+			document.getElementById("off" + channels[j].name +"Val").value = valueToUnit(channels[j].offset) + " V";
 		}
   }     
   // update
@@ -1838,6 +1849,7 @@ function generateFFT() {
    var channelsA =[];
    var maxG = 0;
    var minG = 1;
+   var first = 0;
 
    currUnit = document.getElementById("currUnit").value;
    nPair = dataMax/2;
@@ -1850,10 +1862,10 @@ function generateFFT() {
    
    for (var i = 0; i < nPair; i++) {
       // aR[i] = dataOSC2[i + actChan * nPair];
-      if (currUnit == 1) {  // voltage, time
-	     aR[i] = dataOSC2[i + (j + 1) * nPair];
-	  } else {              // code
+      if (currUnit == 0) {  // code 
 	     aR[i] = dataOSC3[i + (j + 1) * nPair];
+	  } else {              // voltage, time
+	     aR[i] = dataOSC2[i + (j + 1) * nPair];
 	  }
 	  aI[i] = 0;
    }
@@ -1875,6 +1887,11 @@ function generateFFT() {
    // fix betrag = 0 for log operation
    var min = betrag[0 + gr1 * (j + 1)];
    var max = betrag[0 + gr1 * (j + 1)];
+	if ((channelsA[j].selected == 1)  && (first == 0))  { // should be done once
+	  first = 1;
+	  minG = min;
+	  maxG = max;
+	}  
    for(var i = 1; i < gr1; i++) {   
 	 if ((betrag[i + gr1 * (j + 1)] < min) && (betrag[i + gr1 * (j + 1)] > 0)) { // prepare betrag = 0 for log operation 
 	   min = betrag[i + gr1 * (j + 1)];
@@ -1891,23 +1908,28 @@ function generateFFT() {
 		   betragdB[i + gr1 * (j + 1)] = 10 * Math.log(betrag[i + gr1 * (j + 1)]) / Math.LN10; // 10 because of sqrt
 	 }
     }
-	if (channelsA[j].selected == 1) {
+	if (channelsA[j].selected == 1){
 	  if (min < minG) { minG = min; }
 	  if (max > maxG) { maxG = max; }
 	}  
    }
    // set y axis
+   // alert("0 Max:" + maxG + ", Min:" + minG + "x");
+   if (maxG == 0) maxG = minG;
+   if (minG == 0) minG = maxG/1E5; // range 50 dB
    maxG = 10 * Math.log(maxG) / Math.LN10;
    minG = 10 * Math.log(minG) / Math.LN10;
-   // alert("Max:" + maxG + ", Min:" + minG + "x");
-   scale_lin_max_min (maxG,minG,"auto");
+   // alert("1 Max:" + maxG + ", Min:" + minG + "x");
+   scale_lin_max_min (maxG,minG,"auto0");
    maxG = oMax;
    minG = oMin;
+   // alert("2 Max:" + maxG + ", Min:" + minG + "x" + oMax);
    var range = (maxG - minG) / 10;
-   range = 20;
+   // range = 20;  // set fixed range from 10 to -190
    var offset = - (maxG + minG) / 2;
-   offset = 90;
-  for (var j = 1; j < channelsA.length; j++) { // all channels
+   // offset = 90; // set fixed offset from 10 to -190
+   // alert("Range " + range + " offset: " + offset); 
+  for (var j = 1; j < channelsA.length; j++) { // all channels, not AWG?
     channelsA[j].range = range;
     channelsA[j].offset = offset;
    }
@@ -1915,9 +1937,9 @@ function generateFFT() {
    // alert(0 + "," + 127 + "," + 3 + "," + betrag[0 + 127 * (3 + 1)]);
    // Graphics
    // FFT Chart
-	ScatterPlotO("fftChart",(gr1 + "points FFT"),betragdB,gr1,
+	ScatterPlotO("fftChart",(gr1 + " FFT points of " + (2 * gr1 + 2 ) + " data points"),betragdB,gr1,
 	              "Frequency","log","auto",
-				  "Magnitude [dB]","linO","auto0","Fine"  //Grid
+				  "Magnitude [dB]","linO","auto0","Grid"  //"Grid"/"Fine"
 				  ,0, activeIndex, channelsA
 				 );
 				 
@@ -2174,7 +2196,12 @@ var fullDataT = "";
 			document.getElementById("lCmd").innerHTML = "Sent command: " + cmd + " at " + nowTxt;
         }
 
+function initAll() {
+   changeUnit();
+}
+
 window.addEventListener("load",confOsc());
+window.addEventListener("load",initAll());
 
 		// Will pop up regularly
 		// socket.on("connect_error", (error) => {

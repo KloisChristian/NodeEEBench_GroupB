@@ -284,7 +284,7 @@ void digWrite(uint16_t sineValue){
 }
 */
 
-int activeS   =      8; // 20 possible for Cserial DAC 
+int activeS   =      50; // 20 possible for Cserial DAC 
 // 20 .. 100us, 800 .. 4ms 
 int nBits = 16;     // number of send bits
 
@@ -480,7 +480,7 @@ void loop() {
         } else if (oscConfig == 2) { // 8k samples ADC_OSC1, PMOD AD2 
            // oscX = readADC();
            oscX = SARRead();
-           Serial.print(" , ADC(AD2) = ");
+           Serial.print(" , ADC(SAR) = ");
            Serial.print(oscX);
            oscX = analogRead(ADC_OSC1);
            Serial.print(" , ADC(OSC1) = ");
@@ -488,7 +488,7 @@ void loop() {
         } else if (oscConfig == 1) { // 4k samples ADC_OSC1, ADC_OSC2, ADC:OSC3, PMOD AD2 
            // oscX = readADC();
            oscX = SARRead();
-           Serial.print(" , ADC(AD2) = ");
+           Serial.print(" , ADC(SAR) = ");
            Serial.print(oscX);
            oscX = analogRead(ADC_OSC1);
            Serial.print(" , ADC(OSC1) = ");
@@ -496,8 +496,9 @@ void loop() {
            oscX = analogRead(ADC_OSC2);
            Serial.print(" , ADC(OSC2) = ");
            Serial.print(oscX);
-           oscX = analogRead(ADC_OSC3);
-           Serial.print(" , ADC(OSC3) = ");
+           // oscX = analogRead(ADC_OSC3);
+           oscX = readADC();
+           Serial.print(" , ADC(AD2) = ");
            Serial.print(oscX);
            oscX = analogRead(ADC_OSC4);
            Serial.print(" , ADC(OSC4) = ");

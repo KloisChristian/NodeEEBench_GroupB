@@ -5,7 +5,7 @@
 	node ServerEEBench.js
 
     Details:
-    - Espress = framework for server (in place of http)
+    - Express = framework for server (in place of http)
     - path = gives you static path from root of the server
     - public folder =  contains all files that can be accessed from the website
     - Express app by default run on localhost:3000
