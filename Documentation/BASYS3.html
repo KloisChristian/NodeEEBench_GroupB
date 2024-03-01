@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<meta name="description" content="A description of EEBench an open source, open access low cost
+   oscilloscope and arbitrary waveform generator based on FPGA BASYS3 and nodejs JavaScript" />
+<html xml:lang="en" lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<title> BASYS3 NodeEEBench </title>
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" type="text/css" href="../css/style.css" media="all" />
+ <style>
+.imgcon {width: 525px; margin: 0 auto; padding: 0; text-align: center;}
+#anim {width: 270px; height: 320px; position: relative; margin-top: 0.5em;}
+#anim img {position: absolute; top: 42px; left: 24px;}
+img#me01 {top: 0; left: 0;}
+img#me02 {left: 23px;}
+img#me04 {top: 44px;}
+img#me05 {top: 43px;left: 36px;}
+div.scrollX {
+  width: 400px;
+  height: 200px;
+  overflow: scroll;
+}
+th.norm {
+    background-color: #CCCCCC;
+    color: black;
+} 
+table.norm, th.norm, td.norm {
+   border-collapse: collapse;
+   border: 1px solid black;
+}
+th.clr {
+} 
+</style> 
+
+<!-- Prettify Google -->
+<link href="../google-code-prettify/src/prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="../google-code-prettify/src/prettify.js"></script>
+<script type="text/javascript" src="../google-code-prettify/src/lang-vhdl.js"></script>
+<!-- Chart -->
+<SCRIPT SRC="../Chart_2013_03_11/Chart_basic.js"></SCRIPT>
+<!-- JQuery -->
+<script type="text/javascript" src="../scripts/jquery.js"></script>
+<!-- LTSPICE -->
+<SCRIPT SRC="../SPICE_HTML_2018_02/LTSPICE.js"></SCRIPT>
+<!-- QR Code -->
+<script src="../QRCode/jsqr-1.0.2.js" type="text/javascript"></script>
+<!-- Usage Logging -->
+<SCRIPT SRC="../scripts/ToggleLog.js"></SCRIPT>
+<!-- MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$$","$$"],["\\(","\\)"]]}
+  });
+</script>
+<script type="text/javascript" src="../MathJax/MathJax.js"></script>
+
+</head>
+<body>
+<!--
+  BEGIN: Content of extension "ts_mit", plugin "tx_tsmit_pi1"
+ -->
+  <div id="headx">
+  <div id="nheader1" style="background-color:#0067a5;color:#FFFFFF" align="right" >
+     <a href="https://www.hochschule-kempten.de" style="color:#FFFFFF"> Hochschule Kempten &nbsp; &nbsp; &nbsp; </a>
+  </div>
+  <div id="nheader2" style="background-color:#05adb5;color:#FFFFFF" align="right" >
+     <a href="https://www.hs-kempten.de/fakultaet-elektrotechnik/" style="color:#FFFFFF">
+	 Fakultät Elektrotechnik &nbsp; &nbsp; &nbsp;
+  </div>
+  <div id="nheader3" style="background-color:#f18700;color:#FFFFFF" align="right">
+     <a href="../Vollrath_Work.html" style="background-color:#f18700;color:#FFFFFF"> 
+	 Publications &nbsp; &nbsp; &nbsp;</a>
+     <a href="https://www.hs-kempten.de/elektrotechnik/fakultaet/personen-detailansicht/joerg-vollrath?tx_hisconnect_personenlisting%5Bbacklink%5D=607&cHash=effe2c6873f6c8a9f79b55b636d3bde2" style="background-color:#f18700;color:#FFFFFF"> 
+	 Fachgebiet Elektronik, Prof. Vollrath &nbsp; &nbsp; &nbsp;</a>
+  </div>
+  </div>
+<br>
+<div> 
+<table>
+<tr><td style="width:70%">
+  <h1>NodeEEBench with Digilent BASYS3 FPGA board</h1>
+
+Jörg Vollrath, University of Applied Science Kempten, Germany, Joerg.vollrath@hs-kempten.de<br>
+March, 2024<br>
+<br>
+<hr>
+<br>
+<h2> Overview</h2><br>
+
+<h3>Hardware</h3>
+<h3>Software</h3>
+<h3>Operation</h3>
+<h3>Summary</h3>
+<h3>To Do List</h3>
+
+<br>
+<hr>
+<br>
+
+</td><td style="width:30%">  
+<canvas id="thisQR"></canvas></td>
+</tr>
+</table>
+
+<h2> Hardware Installation BASYS3</h3><br>
+
+The follwing picture shows the BASYS3 board using 4 XADC channels with a 16-bit R2R DAC.<br> 
+For debugging purpose an oscilloscope and waveform generator can be connected.<br>
+A 16 Bit R2R DAC is built on the breadboard to supply an analog test signal for the XADC channels.<br>
+<br>
+<img src="ImagesS/BASYS3_V04_02.png" width="400"><br>
+Figure: BASYS3 FPGA Board with R2R DAC and Electronic Explorer <br>
+<br>
+<h3>Connections</h3>
+<br>
+Pins Oscilloscope: <br>
+OSC1 JXA 1 in, 7 GND;<br> 
+OSC2 JXA 2 in, 8 GND;<br>
+OSC3 JXA 3 in, 9 GND;<br> 
+OSC4 JXA 4 in, 10 GND;<br> 
+<br>
+<img src="ImagesS/16Bit_R2R_DAC.jpg"><br>
+Figure: 16 Bit R2R schematic<br>
+<br>
+16 Bit R2R DAC circuit as arbitrary wavefrom generator (AWG):<br>
+Pins AWG:<br> 
+JC upper 8 Bit connection: 10 (D15),9 (D14),8 (D13),7 (D12),4 (D11),3 (D10),2 (D9),1 (D8); <br>
+JB lower 8 Bit connection: 10 (D7),9 (D6),8 (D5),7 (D4),4 (D3),3 (D2),2(D1),1(D0);<br>
+<br>
+R = 100 k&Omega;: 15 resistors between<br>
+xD0, xD1; xD1, xD2; xD2, xD3; xD3, xD4; xD4, xD5; xD5, xD6; xD6, xD7;
+xD7, xD8; xD8, xD9; xD9, xD10; xD10, xD11; xD11, xD12; xD12, xD13;
+xD14, xD15;<br>
+<br>
+2R = 220 k&Omega;: 17 resistors between nodes<br>
+GND, xD0; D0, xD0; D1, xD1; D2, xD2; D3, xD3; D4, xD4;
+D5, xD5; D6, xD6; D7, xD7; D8, xD8; D9, xD9; D10, xD10; D11, xD11; D12, xD12;
+D13, xD13; D14, xD14, D14, xD15 (output)<br>
+<br>
+16 Bit R2R DAC: left side output D15 connected to OSC1, right side D0 and GND connection.<br>
+<br>
+A low voltage rail-to-rail Operational amplifier like the MCP6022 can be used as a buffer amplifier.<br>
+MCP6022: f<sub>bw</sub> = 10 MHz, VDD = 2.5 .. 5.5 V<br> 
+<br>
+<img src="ImagesS/MCP6022Buffer.png" width="400"><br>
+Figure: MCP6022 Output buffer wiring  <br>
+<br>
+After connecting all parts and connecting the BASYS3 via USB to a Windows PC a bit file can
+be loaded each time the board is powered via Vivado or a bin file can program 
+the onboard Flash memory. Vivado 2019.1 is used in this project.<br>
+The Xilinx project, .bit and .bin files are in the subdirectory Xilinx.<br>
+Then the board is ready for use.<br>
+<br>
+
+<h3>Hardware Features</h3><br>
+<br>
+4 channel, 12-Bit, 125 kSps, 0..1 V range ADC oscilloscope FPGA (XADC)<br>
+1 channel, 16-Bit, 30kSps, 0..3.3 V range, 15us settling time, 100k,220k R2R DAC <br>
+8, 256, 512, 1k, 2k, 4k samples transfered via UART with Baud rate 230400<br>
+<br>
+The FPGA configuration is done using the VHDL files in subdirectory Xilinx/EEBench<bR>
+<br>
+<h3>Software</h3><br>
+<br>
+A nodeJS server providing the user interface and serial communication is realized in 
+the top directory of this project with the following files:<br>
+<br>
+A batch file to start the node server: NodeEEBench.bat<br>
+<br>
+A nodeJS server application for communication with FPGA board and providing a user interface: ServerEEBench.js<br> 
+The HTML user interface: Projekte/NEEBench.html<br>
+Some modules are needed for this project:<br>
+Chart_2013_03_11/Chart_basic.js for plotting the graphs in consistent colors<br>
+css/style.css for formatting the HTML page<br>
+FFT/dspFFT.js FFT functions<br>
+node_modules: socket.io, fs, path, express, serialport, http<br>
+<br>
+This provides a user interface in the browser at localhost:3000 with the following tabs.<br>
+<br>
+<img src="ImagesS/NEEBenchUserInterface.jpg" width="300" height="200">
+<img src="ImagesS/WaveHTML.png" width="300" height="200"><br>
+Figure: Configuration and signal generator user interface <br>
+<br>
+<img src="ImagesS/Oscilloscope_UI_V05.jpg" width="300" height="200">
+<img src="ImagesS/FFT_Tab.png" width="300"  height="200"><br>
+Figure: Oscilloscope and FFT interface V05<br>
+<br>
+<img src="ImagesS/Histogram.jpg" width="300"  height="200"><br>
+Figure: Histogram interface V06<br>
+<br>
+Software features:<br>
+Configuration is done with individual serial command transfer.<br>
+AWG: DC, stair, triangle and sine generator with frequency, amplitude and offset<br>
+OSC: 4 channel and AWG with 8..4096 sample selection, xy display,
+voltage and code selection, rising, falling single channel trigger,
+minimum, maximum, average, amplitude, period and frequency calculation.<br>
+There is voltage sample data and code data display available. A measured signal 
+can be directly compared to the golden AWG signal in voltage or code.<br> 
+FFT: AWG1, OSC1, OSC2, OSc3, OSC4 with highest magnitude frequencies and
+total noise magnitude for ENOB, SINAD, SFDR, SDR calculation.<br>
+Histogram with adjustable (16..256) number of bins.<br> 
+<br>
+
+<h3>Operation</h3>
+<br>
+Start: NodeEEBench.bat<br>
+Open localhost:3000 in the browser<br>
+Change to AWG1 tab and start AWG with "Run"<br>
+Watch the commands in the nodeJS command window and at the configuration tab.<br>
+Change to OSC tab and start acquisition with "Run"<br>
+A sine signal should be displayed.<br>
+Play around: Change number of samples, x-axis, unit, Trigger: source, condition and level,
+change Position, base, Offset and Range<br>
+Change to FFT tab and start FFT calculation with "Run"<br>
+ 
+<br>
+<h3>Summary</h3>
+<br>
+This system with an arbitrary waveform generator and an oscilloscope
+ with FFT and histogram is very low cost using a BASYS3 system for 140.- Euro (2023) and 
+open source with a nice user interface. <br>
+It is possible to show provided AWG and sampled OSC codes
+and compare them.<br>
+<br>
+<h3>Changes</h3>
+<br>
+<ul>
+<li>Verify oscilloscope switch between code and volt (NEEBench.html)<br>
+    1.03.2024 2h O command parameters fixed, initAll implemented, y scaling fixed</li>
+</li>
+</ul>
+<br>
+<h3>To Do</h3>
+<br>
+<ul>
+<li>Implement AWG code/voltage mode for good FFT</li>
+<li>Try out code based FFT and ramp</li> 
+<li>Implement DAC INL, DNL ramp test</li> 
+<li>Prepare for system configuration BASYS3, Arduino MKR WIFI1010 , Raspberry Pi W Zero<br>
+    Batch file, system object (NEEBench.html), control and acquisition of Arduino</li>
+<li>Implement DAC Histogram with lookup table 256/4096</li>
+<li>Implement Pmod DA2 DAC at JA</li>
+<li>Implement 16 Bit Digital IO for JB, JC with vector and graphical user interface</li>
+<li>Check hardware Sine implementation since time range larger than 1ms/div gives bleeding FFT curve</li>
+</ul>
+<br>
+ <br><hr>
+ <div id="footer" style="background-color:#0067a5;color:#FFFFFF">
+<br>
+ &nbsp; Hochschule f&uuml;r angewandte Wissenschaften Kempten, J&ouml;rg Vollrath, Bahnhofstra&szlig;e 61 &middot; 87435 Kempten<br>
+ &nbsp; Tel. 0831/25 23-0 &middot; Fax 0831/25 23-104 &middot; E-Mail: joerg.vollrath(at)hs-kempten.de <br>
+ <a href="http://www.hochschule-kempten.de/metanavigation/impressum.html"> 
+  <div style="background-color:#0067a5;color:#FFFFFF"> Impressum </div> </a>
+ </div>
+       <script type="text/javascript"> 
+<!-- Begin
+
+
+	function myQR() {
+			var qr = new JSQR();							// Initialize a new JSQR object.
+			var code = new qr.Code();						// Initialize a new Code object.
+
+			code.encodeMode = code.ENCODE_MODE.BYTE;			// Set the code datatype.
+			code.version = code.DEFAULT;						// Set the code version
+														// (DEFAULT = use the smallest possible version).
+			code.errorCorrection = code.ERROR_CORRECTION.H;		// Set the error correction level (H = High).
+
+			var input = new qr.Input();						// Initialize a new Input object.
+			input.dataType = input.DATA_TYPE.TEXT;			 	// Specify the data type of 'data'.
+														// Here, 'data' contains only text.
+			var stX = window.location.pathname;					// Specify the data which should be encoded.
+            
+			// alert(stX);
+			if (stX.substr(0,3) == "/D:") {  // File name local transfer to https
+			   stX = "https://personalpages.hs-kempten.de/~vollratj/" 
+			        + stX.substr(27,stX.length-27);
+			} else 	if (stX.substr(0,3) == "/C:") {  // File name local transfer to https
+			   stX = "https://personalpages.hs-kempten.de/~vollratj/" 
+			        + stX.substr(52,stX.length-52);
+			} else{
+			   stX = "https://personalpages.hs-kempten.de"+stX;
+			}
+			// alert(stX);
+			input.data = stX
+			
+			var matrix = new qr.Matrix(input, code);			// Initialize a new Matrix object using the input
+														// and code, defined above.
+														// At this point, the QR Code get generated.
+
+			matrix.scale = 4;								// Specify the scaling for graphic output.
+			matrix.margin = 2;								// Specify the margin for graphic output.
+
+			var canvas = document.getElementById('thisQR');		// Create a new Canvas element.
+			canvas.setAttribute('width', matrix.pixelWidth);		// Set the canvas width to the size of the QR code.
+			canvas.setAttribute('height', matrix.pixelWidth);		// Set the canvas height to the size of the QR code.
+			canvas.getContext('2d').fillStyle = 'rgb(0,0,0)';		// Set the foreground color of the canvas to black.
+			matrix.draw(canvas, 0, 0);						// Draw the QR code into the canvas
+														// at position 0 (left), 0 (top).
+		};
+        myQR();
+		updateServerLog("EEBench","EEBench_Main");
+        document.addEventListener("load", prettyPrint());
+     document.addEventListener("load", findLT());
+
+ //  End -->
+	  </script>
+ </body>
+</html>
