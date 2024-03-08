@@ -131,12 +131,6 @@ COMPONENT uart_mem
       dataMax: in std_logic_vector(15 downto 0);         -- block size
       aBuf: out std_logic_vector(15 downto 0);           -- address for block memory
       rx_mem: out std_logic_vector(RX_SIZE-1 downto 0);  -- receive memory
-      addr01: out std_logic_vector(11 downto 0);         -- Lookup interface
-      we01: out std_logic;
-      din01: out std_logic_vector(15 downto 0);
-      addr02: out std_logic_vector(11 downto 0);
-      we02: out std_logic;
-      din02: out std_logic_vector(15 downto 0);
       tx: out std_logic;
       tx_busy: out std_logic             -- '1' during send
    );
@@ -217,23 +211,10 @@ signal rMem: std_logic_vector(511 downto 0) := (others=>'0');
 
 signal we: std_logic;  
 signal addr: std_logic_vector(15 downto 0);       -- 11: 4096 -> 512samples
-signal we01: std_logic;  
-signal addr01: std_logic_vector(11 downto 0);       -- 11: 4096 -> 512samples
-signal addr01a: std_logic_vector(11 downto 0);       -- 11: 4096 -> 512samples
-signal addr01b: std_logic_vector(11 downto 0);       -- 11: 4096 -> 512samples
-signal we02: std_logic;  
-signal addr02: std_logic_vector(11 downto 0);       -- 11: 4096 -> 512samples
-signal addr02a: std_logic_vector(11 downto 0);       -- 11: 4096 -> 512samples
-signal addr02b: std_logic_vector(11 downto 0);       -- 11: 4096 -> 512samples
 signal addrUart: std_logic_vector(15 downto 0);   -- 15: 64k -> 8k samples
 signal addrGen: std_logic_vector(15 downto 0);  
 signal din: std_logic_vector(15 downto 0);  
 signal dout: std_logic_vector(15 downto 0);  
-signal din01: std_logic_vector(15 downto 0);  
-signal dout01: std_logic_vector(15 downto 0);  
-signal din02: std_logic_vector(15 downto 0);  
-signal dout02: std_logic_vector(15 downto 0);  
-signal doutX: std_logic_vector(15 downto 0);  
   
 -- Triangle
 signal tstart, tstop, tstep: std_logic_vector(15 downto 0);
@@ -249,7 +230,6 @@ signal mysine: STD_LOGIC_VECTOR(31 downto 0);              -- output waveform (2
 
 signal ENX, EN_2, EN_4, EN_8, EN_16, EN_32, EN_64, EN_128, EN_256: STD_LOGIC;
 signal mywave: STD_LOGIC_VECTOR(15 downto 0);
-signal mywaveX: STD_LOGIC_VECTOR(15 downto 0);
 signal wavesel: STD_LOGIC_VECTOR(2 downto 0);
 signal xrst: STD_LOGIC;
 
@@ -261,7 +241,7 @@ signal upSample: STD_LOGIC := '1';                       -- if valid save data a
 begin
 
 ----------------------------------------------------------
-------      acquisition  memory                    -------
+------        memory                      -------
 ----------------------------------------------------------
 myBuf: One_port_ram
    port map (
@@ -279,40 +259,6 @@ with tx_busy select
 		    addrGen when others;      -- switches
 
 ----------------------------------------------------------
-------      LUT  memory                    -------
-----------------------------------------------------------
-myLut1: One_port_ram
-   generic map ( ADDR_WIDTH => 12 )
-   port map (
-      clk => CLK,
-      we => we01,
-      addr => addr01,
-      din => din01,
-      dout => dout01
-    );
-
--- address multiplexer write read
-
-addr01b <= mywave(15 downto 4);         -- from AWG
-
-with rMem(13) select
-	addr01 <= addr01a  when '0',        -- uart writing
-		      addr01b  when '1',        -- lut reading
-		      addrGen when others;      -- switches
-
-myLut2: One_port_ram
-   generic map ( ADDR_WIDTH => 12 )
-   port map (
-      clk => CLK,
-      we => we02,
-      addr => addr02,
-      din => din02,
-      dout => dout02
-    );
-
--- missing address multiplex
-
-----------------------------------------------------------
 ------        Switches to LED                      -------
 ----------------------------------------------------------
 
@@ -328,25 +274,19 @@ with BTN(3) select -- BTND
 
 wavesel <= rMem(15)&rMem(9 downto 8);
 with wavesel select
-	mywave(7 downto 0) <= mysine(22 downto 15)   when "101",  -- sine
+	mywave(7 downto 0) <= mysine(22 downto 15)   when "101",      -- sine
 		                  tout(7 downto 0)   when "110",      -- triangel
-		                  SW(7 downto 0) when "111",          -- switches
+		                  SW(7 downto 0) when "111",
 		                  "00000000" when others; -- switches
 
 with wavesel select
-	mywave(15 downto 8) <= mysine(30 downto 23)   when "101", -- sine
+	mywave(15 downto 8) <= mysine(30 downto 23)   when "101",      -- sine
 		                   tout(15 downto 8) when "110",      -- triangel
-		                   SW(15 downto 8)   when "111",      -- switches   
-		                   "00000000" when others; 
+		                   SW(15 downto 8)   when "111",
+		                   "00000000" when others; -- switches
 
-doutX <= dout01;   -- lower bits add count of mywave?? 
-with rMem(13) select -- lookup table data or not
-    mywaveX <= mywave when '0',
-               dout01 when '1',
-               "0000000000000000" when others;
-
-JB <= mywaveX(7 downto 0);  			 			 
-JC <= mywaveX(15 downto 8);		
+JB <= mywave(7 downto 0);  			 			 
+JC <= mywave(15 downto 8);		
 
 				 			 
 ----------------------------------------------------------
@@ -458,8 +398,7 @@ readyX <= ready;    -- Simulation create ADC ready with EN_16:  or EN_16;
 		       when  "010" => addrGen <= std_logic_vector(to_signed(iCnt + 1,16)); din <= data; we <= '1';
 		       when  "011" => addrGen <= std_logic_vector(to_signed(iCnt + 2,16)); din <= data; we <= '1';
 		       when  "100" => addrGen <= std_logic_vector(to_signed(iCnt + 3,16)); din <= data; we <= '1';
-		                                            -- awg code including lookup 
-		       when  "101" => addrGen <= std_logic_vector(to_signed(iCnt + 4,16)); din <= mywaveX(15 downto 0); we <= '1';
+		       when  "101" => addrGen <= std_logic_vector(to_signed(iCnt + 4,16)); din <= mywave(15 downto 0); we <= '1';
 		                      iCnt := iCnt + 5; bCnt := bCnt + 1;  
 		       when  "110" => addrGen <= std_logic_vector(to_signed(1,16));            -- save sampled data since last transfer 
 		                      din <= std_logic_vector(to_signed(sCnt,16)); we <= '1';
@@ -529,12 +468,6 @@ my_adc : XADC_EE
       dataMax => dataMax,         -- block size
       aBuf => addrUart,
       rx_mem => rMem,   -- receive memory
-      addr01 => addr01a,         -- Lookup interface DAC
-      we01 => we01,
-      din01 => din01,
-      addr02 => addr02a,        -- Lookup interface ADC
-      we02 => we02,
-      din02 => din02,
       TX => TX,
       tx_busy => tx_busy -- sending data?
    );

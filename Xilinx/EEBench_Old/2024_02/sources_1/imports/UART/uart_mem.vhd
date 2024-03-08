@@ -23,12 +23,6 @@ entity uart_mem is
       dataMax: in std_logic_vector(15 downto 0);         -- block size
       aBuf: out std_logic_vector(15 downto 0);           -- address for block memory
       rx_mem: out std_logic_vector(RX_SIZE-1 downto 0);  -- receive memory
-      addr01: out std_logic_vector(11 downto 0);         -- Lookup interface
-      we01: out std_logic;
-      din01: out std_logic_vector(15 downto 0);
-      addr02: out std_logic_vector(11 downto 0);
-      we02: out std_logic;
-      din02: out std_logic_vector(15 downto 0);
       tx: out std_logic;
       tx_busy: out std_logic
    );
@@ -82,7 +76,6 @@ end COMPONENT;
 signal rx_done_tick: std_logic;
 signal rx_data_out: std_logic_vector(7 downto 0);
 signal rn_data_out: std_logic_vector(3 downto 0);
-signal data16: std_logic_vector(15 downto 0);
 
 -- tx signals
 signal tx_start: std_logic;
@@ -98,12 +91,10 @@ signal tma: std_logic_vector(17 downto 0); -- ASCII hex value
 signal s_tick: std_logic_vector( 9 downto 0);
 signal xtick: std_logic;
 
-signal ucount: std_logic_vector(15 downto 0);
+signal ucount: std_logic_vector(7 downto 0);
 signal bCount: std_logic_vector(15 downto 0);
 
 signal dataMaxU: unsigned(15 downto 0);
-
-signal lut: std_logic;       -- received data to lut = 1 otherwise 0
 
 begin
 
@@ -168,17 +159,13 @@ tx_busy <= tx_active;
 
    -- FSMD state read to memory register
   getCmd: process(clk,reset,rx_done_tick)
-   variable numD: unsigned(15 downto 0):= (others => '0');       -- number of received hex data
-   variable rmAddress: unsigned(17 downto 0):= (others => '0');  -- Bit Address for received data  
+   variable numD: unsigned(7 downto 0):= (others => '0');
+   variable rmAddress: unsigned(8 downto 0):= (others => '0');   
    begin
       if reset='1' then
          numD := (others => '0');
          rmAddress := (others => '0');
          rx_mem <= (others => '0');
-         data16 <= (others => '0');
-         we01 <= '0';
-         we02 <= '0';
-         lut <= '0';
       elsif (clk'event and clk='1') then -- new data
         if  (rx_done_tick='1') then 
          -- tx_enable  <= '0';                       -- this blocks operation completely
@@ -189,73 +176,39 @@ tx_busy <= tx_active;
 			  rx_mem(7 downto 0) <= rx_data_out; 
 			  rx_mem(15 downto 8) <= "01000000"; 
 		   when "01001111" =>                     -- ASCII 49 O sine signal
-              numD := "0000000000001000";                 -- 8 Hex numbers, (Step, amplitude, offset)x(8x4)
-              rmAddress := to_unsigned(276,18);    -- Start at index 276 (272 + 4)
-			  rx_mem(7 downto 0) <= rx_data_out; 
-		   when "01010001" =>                     -- ASCII 51 Q make LUT active
-              numD := (others => '0');
-              rmAddress := (others => '0');
-			  rx_mem(7 downto 0) <= rx_data_out; 
-			  rx_mem(13) <= '1'; 
-		   when "01010010" =>                     -- ASCII 52 R sine signal
-              lut <= '1';
-              numD := "1000000000000000";           -- numD = 32 k counts hex values 
-                                                    -- Value 32k/4(Hex) 8k 16 bit values?
-              rmAddress := to_unsigned(0,18);       -- Start at lut address 0
+              numD := "00001000";                 -- 8 Hex numbers, (Step, amplitude, offset)x(8x4)
+              rmAddress := to_unsigned(276,9);    -- Start at index 276 (272 + 4)
 			  rx_mem(7 downto 0) <= rx_data_out; 
 		   when "01010011" =>                     -- ASCII 53 S sine signal
-              numD := "0000000000011000";                 -- 24 Hex numbers, (Step, amplitude, offset)x(8x4)
-              rmAddress := to_unsigned(20,18);            -- Start at index 20 (16+4)
+              numD := "00011000";                 -- 24 Hex numbers, (Step, amplitude, offset)x(8x4)
+              rmAddress := to_unsigned(20,9);            -- Start at index 20 (16+4)
 			  rx_mem(7 downto 0) <= rx_data_out; 
-			  rx_mem(15 downto 14) <= "00";  -- Status Sine not active
-			  rx_mem(12 downto 8) <= "00001";  -- Status Sine not active
+			  rx_mem(15 downto 8) <= "00000001";  -- Status Sine not active
 		   when "01010100" =>                     -- ASCII 54 T Triangel
-              numD := "0000000000010100";                    -- 20 Hex numbers: 64 Bits 4(Start,Stop,Step,Repeat)x(4x4)
-              rmAddress := to_unsigned(180,18);    ---  "10110100";  x"B4"   -- 176 Start at index 
+              numD := "00010100";                    -- 20 Hex numbers: 64 Bits 4(Start,Stop,Step,Repeat)x(4x4)
+              rmAddress := to_unsigned(180,9);    ---  "10110100";  x"B4"   -- 176 Start at index 
 			  rx_mem(7 downto 0) <= rx_data_out; 
-			  rx_mem(15 downto 14) <= "00";  -- Not active
-			  rx_mem(12 downto 8) <= "00010";  -- Not active
+			  rx_mem(15 downto 8) <= "00000010";  -- Not active
 		   when "01010101" =>                     -- ASCII 55 U start sending data
               tx_enable <= ('1' and not(tx_active));  -- send data flag if transfer not ongoing
 		   when "01010110" =>                     -- ASCII 56 V sw to output
-              rx_mem(15 downto 14) <= "10";  -- sw to output and active
-              rx_mem(12 downto 8) <= "00011";  -- sw to output and active
+              rx_mem(15 downto 8) <= "10000011";  -- sw to output and active
 		   when others =>	                      -- Write data
               rx_mem(14) <= '0';      -- active
               if (numD > 1) then
 			    numD := numD - 1;
-                if (lut = '0') then rx_mem(to_integer(rmAddress) - 1 downto to_integer(rmAddress) - 4) <= rn_data_out;
-				elsif (numD >= 8*1024) then -- upper part
-				  addr01 <= std_logic_vector(rmAddress(15 downto 4));
-				  din01 <= data16(11 downto 0)&rn_data_out;
-				  data16 <= data16(11 downto 0)&rn_data_out; 
-				  we01 <= '1';
-				else -- lower part
-				  addr02 <= std_logic_vector(rmAddress(15 downto 4));
-				  din02 <= data16(11 downto 0)&rn_data_out;
-				  data16 <= data16(11 downto 0)&rn_data_out;
-				  we02 <= '1';
-				end if;
+                rx_mem(to_integer(rmAddress) - 1 downto to_integer(rmAddress) - 4) <= rn_data_out;
 				rmAddress := rmAddress + 4;
               elsif (numD = 1) then
 			    numD := numD - 1;
-                if (lut = '0') then rx_mem(to_integer(rmAddress) - 1 downto to_integer(rmAddress) - 4) <= rn_data_out;
-				else -- lower part
-				  addr02 <= std_logic_vector(rmAddress(15 downto 4));
-				  din02 <= data16(11 downto 0)&rn_data_out;
-				  data16 <= data16(11 downto 0)&rn_data_out;
-				  we02 <= '1';
-				end if;
-				lut <= '0';
+                rx_mem(to_integer(rmAddress) - 1 downto to_integer(rmAddress) - 4) <= rn_data_out;
 				rmAddress := rmAddress + 4;
 				rx_mem(15) <= '1';      -- active
 				rx_mem(14) <= '1';      -- active
 			  end if;
          end case;
          ucount <= std_logic_vector(numD);
-        else -- end tick done
-              we01 <= '0';
-              we02 <= '0';
+        else 
               tx_enable  <= '0';                    -- one cycle only at '1'
               rx_mem(14) <= '0';
         end if;
