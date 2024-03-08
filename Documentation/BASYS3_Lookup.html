@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<meta name="description" content="A description of EEBench an open source, open access low cost
+   oscilloscope and arbitrary waveform generator based on FPGA BASYS3 and nodejs JavaScript" />
+<html xml:lang="en" lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<title> BASYS3 Lookup Table </title>
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link rel="stylesheet" type="text/css" href="../css/style.css" media="all" />
+ <style>
+.imgcon {width: 525px; margin: 0 auto; padding: 0; text-align: center;}
+#anim {width: 270px; height: 320px; position: relative; margin-top: 0.5em;}
+#anim img {position: absolute; top: 42px; left: 24px;}
+img#me01 {top: 0; left: 0;}
+img#me02 {left: 23px;}
+img#me04 {top: 44px;}
+img#me05 {top: 43px;left: 36px;}
+div.scrollX {
+  width: 400px;
+  height: 200px;
+  overflow: scroll;
+}
+th.norm {
+    background-color: #CCCCCC;
+    color: black;
+} 
+table.norm, th.norm, td.norm {
+   border-collapse: collapse;
+   border: 1px solid black;
+}
+th.clr {
+} 
+</style> 
+
+<!-- Prettify Google -->
+<link href="../google-code-prettify/src/prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="../google-code-prettify/src/prettify.js"></script>
+<script type="text/javascript" src="../google-code-prettify/src/lang-vhdl.js"></script>
+<!-- Chart -->
+<SCRIPT SRC="../Chart_2013_03_11/Chart_basic.js"></SCRIPT>
+<!-- JQuery -->
+<script type="text/javascript" src="../scripts/jquery.js"></script>
+<!-- LTSPICE -->
+<SCRIPT SRC="../SPICE_HTML_2018_02/LTSPICE.js"></SCRIPT>
+<!-- QR Code -->
+<script src="../QRCode/jsqr-1.0.2.js" type="text/javascript"></script>
+<!-- Usage Logging -->
+<SCRIPT SRC="../scripts/ToggleLog.js"></SCRIPT>
+<!-- MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX","output/HTML-CSS"],
+    tex2jax: {inlineMath: [["$$","$$"],["\\(","\\)"]]}
+  });
+</script>
+<script type="text/javascript" src="../MathJax/MathJax.js"></script>
+
+</head>
+<body>
+<!--
+  BEGIN: Content of extension "ts_mit", plugin "tx_tsmit_pi1"
+ -->
+  <div id="headx">
+  <div id="nheader1" style="background-color:#0067a5;color:#FFFFFF" align="right" >
+     <a href="https://www.hochschule-kempten.de" style="color:#FFFFFF"> Hochschule Kempten &nbsp; &nbsp; &nbsp; </a>
+  </div>
+  <div id="nheader2" style="background-color:#05adb5;color:#FFFFFF" align="right" >
+     <a href="https://www.hs-kempten.de/fakultaet-elektrotechnik/" style="color:#FFFFFF">
+	 Fakultät Elektrotechnik &nbsp; &nbsp; &nbsp;
+  </div>
+  <div id="nheader3" style="background-color:#f18700;color:#FFFFFF" align="right">
+     <a href="../Vollrath_Work.html" style="background-color:#f18700;color:#FFFFFF"> 
+	 Publications &nbsp; &nbsp; &nbsp;</a>
+     <a href="https://www.hs-kempten.de/elektrotechnik/fakultaet/personen-detailansicht/joerg-vollrath?tx_hisconnect_personenlisting%5Bbacklink%5D=607&cHash=effe2c6873f6c8a9f79b55b636d3bde2" style="background-color:#f18700;color:#FFFFFF"> 
+	 Fachgebiet Elektronik, Prof. Vollrath &nbsp; &nbsp; &nbsp;</a>
+  </div>
+  </div>
+<br>
+<div> 
+<table>
+<tr><td style="width:70%">
+  <h1>NodeEEBench with Digilent BASYS3 FPGA board</h1>
+  <h1>Lookup table Implementation</h1>
+
+Jörg Vollrath, University of Applied Science Kempten, Germany, Joerg.vollrath@hs-kempten.de<br>
+March, 2024<br>
+<br>
+<hr>
+<br>
+<h2> Overview</h2><br>
+
+<h3>Introduction</h3>
+<h3>Implementation as VHDL Program</h3>
+<h3>Testing</h3>
+
+<br>
+<hr>
+<br>
+
+</td><td style="width:30%">  
+<canvas id="thisQR"></canvas></td>
+</tr>
+</table>
+
+<h2> Introduction </h3><br>
+
+<img src="ImagesS/ErrorCorrectionLUT.png" width="400"><br>
+Figure: Error correction with look up tables<br>
+<br>
+The picture shows a typical DAC and ADC system. Digital codes for waveforms can 
+be mapped with lookup tables to codes for a DAC to compensate for errors.<br>
+For testing vector memory can be used to contain the vectors necessary for a test.<br>
+A lookup table can act as a vector memory if the input address is a simple counter.
+A lookup table can also map bad codes to good codes for error compensation.<br>
+Therefore 2 lookup tables for DAC and ADC operation are implemented.<br>
+<br>
+Since 4k x 16 memory with 12 address bits is used a maximum of 12 bits can be realized.<br>
+There is no counting or adding of lower 4 bits of AWG implemented.
+This could lead to higher resolutions.<br>
+<br>
+<h2>Implementation</h3>
+<br>
+<h3>Usage of Block RAM</h3><br>
+
+A one port memory template is used.<br>
+<code class="language-vhdl">
+<pre class="prettyprint lang-vhdl linenums">
+-- Memory
+COMPONENT One_port_ram
+  generic(
+    ADDR_WIDTH: integer := 16;   -- 64k 
+    DATA_WIDTH: integer := 16
+   );
+  port (
+      clk: in std_logic;
+      we: in std_logic;
+      addr: in std_logic_vector(ADDR_WIDTH-1 downto 0);
+      din: in std_logic_vector(DATA_WIDTH-1 downto 0);
+      dout: out std_logic_vector(DATA_WIDTH-1 downto 0)
+    );
+end COMPONENT;
+</pre>
+</code>
+2 lookup tables 4k (ADDR_WIDTH => 12) x 16 each are implemented.<br>
+So far only the myLUT1 AWG part is functional connected.<br>
+<code class="language-vhdl">
+<pre class="prettyprint lang-vhdl linenums">
+myLut1: One_port_ram
+   generic map ( ADDR_WIDTH => 12 )
+   port map (
+      clk => CLK,
+      we => we01,
+      addr => addr01,
+      din => din01,
+      dout => dout01
+    );
+
+-- address multiplexer write read
+addr01b <= mywave(15 downto 4);         -- from AWG
+
+with rMem(13) select
+    addr01 <= addr01a  when '0',        -- uart writing
+              addr01b  when '1',        -- lut reading
+              addrGen when others;      -- switches
+
+myLut2: One_port_ram
+   generic map ( ADDR_WIDTH => 12 )
+   port map (
+      clk => CLK,
+      we => we02,
+      addr => addr02,
+      din => din02,
+      dout => dout02
+    );
+
+</pre>
+</code>
+<h3>Multiplexing data from AWG1 via Block RAM to JB, JC</h3><br>
+Only bits 15 downto 4 of mywave are used for addr01b for the LUT.<br>
+<br>
+rMem(13) control normal operation or activation of lookup table 
+by feeding the AWG code mywave to the address and connecting mywave or dout01 to
+the Pmod JB, JC via mywaveX.<br>
+
+<code class="language-vhdl">
+<pre class="prettyprint lang-vhdl linenums">
+with rMem(13) select -- lookup table data or not
+    mywaveX <= mywave when '0',
+               dout01 when '1',
+               "0000000000000000" when others;
+
+JB <= mywaveX(7 downto 0);  			 			 
+JC <= mywaveX(15 downto 8);		
+</pre>
+</code>
+
+
+<h3>Transfer Data serially into Block RAM</h3><br>
+
+The process getCmd in the file uart_mem.vhd manages the receiving of commands in VHDL.<br>
+<br>
+numD = 32k hex values giving 8k (2 * 12 bit address) 16 bit numbers<br>
+rmAddress, 16 bit, counting from 0 up.<br>
+<br>
+
+<h2>Testing</h3>
+<br>
+<h3>Downloading fixed data and activating LUT</h3><br>
+To check activation of LUT and correct Hex value transfer of the lookup values
+a routine 'defaultLookup(md)' to write a fixed number to the LUT was created.<br>
+<br>
+<table border="1">
+<tr><td>md</td><td>0</td><td>1</td><td>2</td><td>3</td></tr>
+<tr><td>lookup</td><td>normal<br>i*16</td><td>reverse<br>8 *1024 - 1 - i * 16</td>
+                   <td>fixed</td><td>steps<br>Math.trunc(i / 128) * 128 * 16</td></tr>
+</table>
+<br>
+The command line shows the correct R command with hex values.<br>
+Digital values were used to set all LUT values and measurement done 
+with an Electronic Explorer board.<br>
+<br>
+<table border="1">
+<tr><td>Value</td><td>1</td><td>2</td><td>4</td><td>8</td>
+                  <td>16</td><td>32</td><td>64</td><td>128</td>
+				  <td>256</td><td>512</td><td>1024</td><td>2048</td>
+				  <td>4096</td><td>8192</td><td>16384</td><td>32768</td></tr>
+<tr><td>Voltage</td><td></td><td></td><td></td><td></td>
+                    <td></td><td></td><td></td><td></td>
+					<td>0.045</td><td>0.060</td><td>0.09</td><td>0.145</td>
+					<td>0.25</td><td>0.465</td><td>0.87</td><td>1.655</td></tr>
+</table>
+<br>
+Output voltages for the values are ok. The sequence of storing hex values in LUT memory seems to be ok.<br>
+<br>
+The steps mapping was then done to a triangle waveform and gave a stair 
+function with visible limited levels.<br>
+<br>
+Implementation, testing and documentation took 3 days 24 h.<br>
+ <br><hr>
+ <div id="footer" style="background-color:#0067a5;color:#FFFFFF">
+<br>
+ &nbsp; Hochschule f&uuml;r angewandte Wissenschaften Kempten, J&ouml;rg Vollrath, Bahnhofstra&szlig;e 61 &middot; 87435 Kempten<br>
+ &nbsp; Tel. 0831/25 23-0 &middot; Fax 0831/25 23-104 &middot; E-Mail: joerg.vollrath(at)hs-kempten.de <br>
+ <a href="http://www.hochschule-kempten.de/metanavigation/impressum.html"> 
+  <div style="background-color:#0067a5;color:#FFFFFF"> Impressum </div> </a>
+ </div>
+       <script type="text/javascript"> 
+<!-- Begin
+
+
+	function myQR() {
+			var qr = new JSQR();							// Initialize a new JSQR object.
+			var code = new qr.Code();						// Initialize a new Code object.
+
+			code.encodeMode = code.ENCODE_MODE.BYTE;			// Set the code datatype.
+			code.version = code.DEFAULT;						// Set the code version
+														// (DEFAULT = use the smallest possible version).
+			code.errorCorrection = code.ERROR_CORRECTION.H;		// Set the error correction level (H = High).
+
+			var input = new qr.Input();						// Initialize a new Input object.
+			input.dataType = input.DATA_TYPE.TEXT;			 	// Specify the data type of 'data'.
+														// Here, 'data' contains only text.
+			var stX = window.location.pathname;					// Specify the data which should be encoded.
+            
+			// alert(stX);
+			if (stX.substr(0,3) == "/D:") {  // File name local transfer to https
+			   stX = "https://personalpages.hs-kempten.de/~vollratj/" 
+			        + stX.substr(27,stX.length-27);
+			} else 	if (stX.substr(0,3) == "/C:") {  // File name local transfer to https
+			   stX = "https://personalpages.hs-kempten.de/~vollratj/" 
+			        + stX.substr(52,stX.length-52);
+			} else{
+			   stX = "https://personalpages.hs-kempten.de"+stX;
+			}
+			// alert(stX);
+			input.data = stX
+			
+			var matrix = new qr.Matrix(input, code);			// Initialize a new Matrix object using the input
+														// and code, defined above.
+														// At this point, the QR Code get generated.
+
+			matrix.scale = 4;								// Specify the scaling for graphic output.
+			matrix.margin = 2;								// Specify the margin for graphic output.
+
+			var canvas = document.getElementById('thisQR');		// Create a new Canvas element.
+			canvas.setAttribute('width', matrix.pixelWidth);		// Set the canvas width to the size of the QR code.
+			canvas.setAttribute('height', matrix.pixelWidth);		// Set the canvas height to the size of the QR code.
+			canvas.getContext('2d').fillStyle = 'rgb(0,0,0)';		// Set the foreground color of the canvas to black.
+			matrix.draw(canvas, 0, 0);						// Draw the QR code into the canvas
+														// at position 0 (left), 0 (top).
+		};
+        // myQR();
+		// updateServerLog("EEBench","EEBench_Main");
+        document.addEventListener("load", prettyPrint());
+        // document.addEventListener("load", findLT());
+
+ //  End -->
+	  </script>
+ </body>
+</html>

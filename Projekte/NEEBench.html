@@ -101,11 +101,12 @@ td.top {vertical-align: top;}
 	<td  class="tb" onclick="tabAct(3)">&nbsp;&nbsp;FFT&nbsp;&nbsp;</td>
 	<td class="tb" onclick="tabAct(4)">&nbsp;&nbsp;Histogram&nbsp;&nbsp;</td>
 	<td class="tb" onclick="tabAct(5)">&nbsp;&nbsp;Ramp&nbsp;Test&nbsp;INL,&nbsp;DNL&nbsp;&nbsp;</td>
-	<td class="tb" onclick="tabAct(6)">&nbsp;&nbsp;Settling&nbsp;Time&nbsp;&nbsp;</td>
-	<td class="tb" onclick="tabAct(7)">&nbsp;&nbsp;Power&nbsp;Supply&nbsp;&nbsp;</td>
-	<td class="tb" onclick="tabAct(8)">&nbsp;&nbsp;Bodeplot&nbsp;&nbsp;</td>
-	<td class="tb" onclick="tabAct(9)">&nbsp;&nbsp;Digital&nbsp;I/O&nbsp;&nbsp;</td>
-	<td class="tb" onclick="tabAct(10)">&nbsp;&nbsp;Applications&nbsp;&nbsp;</td>
+	<td class="tb" onclick="tabAct(6)">&nbsp;&nbsp;Lookup&nbsp;Table&nbsp;&nbsp;</td>
+	<td class="tb" onclick="tabAct(7)">&nbsp;&nbsp;Settling&nbsp;Time&nbsp;&nbsp;</td>
+	<td class="tb" onclick="tabAct(8)">&nbsp;&nbsp;Power&nbsp;Supply&nbsp;&nbsp;</td>
+	<td class="tb" onclick="tabAct(9)">&nbsp;&nbsp;Bodeplot&nbsp;&nbsp;</td>
+	<td class="tb" onclick="tabAct(10)">&nbsp;&nbsp;Digital&nbsp;I/O&nbsp;&nbsp;</td>
+	<td class="tb" onclick="tabAct(11)">&nbsp;&nbsp;Applications&nbsp;&nbsp;</td>
 	<td class="tbr"> &nbsp; &nbsp; </td></tr>
 </table>
 
@@ -198,7 +199,10 @@ Example stair f = 1 kHz, amp = 1 V, offset = 1 V as shown in AWG1: T00004D8F0F83
       U(o4)(o3)(cP)(o1)(AW)YX(o4)(o3)(o2)(o1)(AW)Y...<br>	  
 "V": Connect switches to output.<br>
 "O": (length = 9) Oscilloscope block size 16 bit and sampling rate 16 Bit (V_06)<br>
-     Command: O00200000 : Block size x0020 = 512; timeBase 0000 8.32 us (BASYS 3 XADC)<br>
+     Command: O02000000 : Block size x0200 = 512; timeBase 0000 8.32 us (BASYS 3 XADC)<br>
+"R": command transfers 8k data 16 bit hex data to lookup table for digital IOs<br>
+     R0000..FFFF<br>
+"Q": command activates the lookup table<br>	 
 <br>
 
  
@@ -487,7 +491,8 @@ Math function, Fit function<br>
   </td>
   </tr>
 </table>
-
+<div id="infoX">
+</div>
 </div>
 
 <!---------------------- Histogram --------------------------------------------------------->
@@ -518,27 +523,101 @@ Math function, Fit function<br>
 
 </div>
 
+<!---------------------- INL, DNL DAC --------------------------------------------------------->
 <div id="tab5" class="tabX" style="display:none">
-<h2>Ramp Test</h2>
+<h2>Ramp Test INL and DNL</h2>
+<br>
+BASYS3 has 16 bit R2R 3.3 V DAC and 4k lookup table.<br>
+For 1 V maximum input range the maximum end code value is: 19858<br>
+Therefore step size is 19858/4096 = 5<br>
+<br>
+<table class="bx">
+ <tr><td class="bo" colspan="2">
+     <span id="rRun"  style="display:block" onclick="rOp('Run')"><img src="ImagesS/Run.png" width="16"> Run  </span>
+	 <span id="rStop" style="display:none"  onclick="rOp('Stop')"><img src="ImagesS/Stop.png" width="16"> Stop </span> </td>
+ </tr>
+  <tr>
+  <td class="bo">
+  Step (Default 5):</td><td>
+     <input type="text" value="5" size="6" id="codesStep"/>  </td>
+    </tr>
+  <tr><td class="bo">
+    Start Code (Default 0): </td><td><input type="text" value="0" size="6" id="codesStart"/>  <br>
+  </td>
+  </tr>
+  <tr><td class="bo">
+    End Code (Default 19858):</td><td><input type="text" value="19858" size="6" id="codesEnd"/>  <br>
+  </td>
+  </tr>
+  <tr>   <td class="bo">
+      <input type="checkbox" id="cLook" value="value" > Calculate Lookup table<br> <!-- checked -->
+     <input type="text" id="stepScale" value="1.0" > Maximum step scaling 0.66..1.0<br> <!-- Range 0.66..1.0 -->
+	  Calculate for Channel &nbsp; 
+      <select name="rampSrc" id="rampSrc" onclick="ramp()">
+       <option value="1"> AWG1 </option>
+       <option value="2"> C1 </option>
+       <option value="3"> C2 </option>
+       <option value="4"> C3 </option>
+       <option value="5"> C4 </option>
+	  </select>
+   </td>
+  </tr>
+  <tr><td colspan="4">
+    <div id="inlResult"></div>
+    <canvas id="inlChart" width="800" height="350"></canvas>
+    <canvas id="dnlChart" width="800" height="350"></canvas><br>
+    <canvas id="rampChart" width="800" height="350"></canvas><br>
+	Click on Chart to get a data table<br><br>
+    <canvas id="rampX" width="800" height="350" style="display:none"></canvas>
+    <canvas id="rampY" width="800" height="350" style="display:none"></canvas>
+  </td>
+  </tr>
+</table>  
+<div id="bestL"></div><br>
 </div>
 
+<!---------------------- Lookup Table --------------------------------------------------------->
 <div id="tab6" class="tabX" style="display:none">
-<h2>Settling time</h2>
+<h2>Lookup Table</h2>
+<br> 
+There should be 256 8 Bit (Arduino), 8k 16 Bit values (BASYS3) comma 
+separated values in the text input field.<br>
+<br>
+<textarea id="lookupX" name="lookupX" rows="8" cols="128">
+</textarea><br>
+<input type="submit" value="Submit" onclick="sendLookup();"></input>
+<br>
+<input type="submit" value="Reset table" onclick="defaultLookup(0);"></input><br>
+<input type="submit" value="Reverse table" onclick="defaultLookup(1);"></input><br>
+<input type="submit" value="Rounded" onclick="defaultLookup(3);"></input><br>
+<br>
+<input type="submit" value="Activate" onclick="activateLookup();"></input>
+<br>
+<input type="submit" value="Deactivate" onclick="deactivateLookup();"></input>
+<br>
+  Fixed value:</td><td>
+     <input type="text" value="1" size="6" id="lookupVal"/><br>
+<input type="submit" value="Fixed value" onclick="defaultLookup(2);"></input>
+<br>
 </div>
 
 <div id="tab7" class="tabX" style="display:none">
-<h2>Power supply</h2>
+<h2>Settling time</h2>
 </div>
 
 <div id="tab8" class="tabX" style="display:none">
-<h2>Bodeplot</h2>
+<h2>Power supply</h2>
 </div>
 
 <div id="tab9" class="tabX" style="display:none">
-<h2>Digital I/O</h2>
+<h2>Bodeplot</h2>
 </div>
 
 <div id="tab10" class="tabX" style="display:none">
+<h2>Digital I/O</h2>
+</div>
+
+<div id="tab11" class="tabX" style="display:none">
 <h2>Applications</h2>
 
 IV curves: R, Diode, transistor, opamp, inverter<br>
@@ -566,6 +645,7 @@ var aState = "Stop";  // awg1 state
 var oState = "Stop";  // oscilloscope state
 var fState = "Stop";  // FFT state
 var hState = "Stop";  // histogram state
+var rState = "Stop";  // ramp test INl, DNL state
 var busy = 0;
 var timeBase = 0; // timeBase 0 every cycle, 1 every second cycle sampling cms send via sendCmdC cmdTxT.value
 var trgPos = -1;  // Trigger position
@@ -690,6 +770,19 @@ function hOp(cmd) {  // oscilloscope reading
     document.getElementById("hStop").style.display="none";
     document.getElementById("hRun").style.display="block";
     hState="Stop";
+  }
+}
+
+function rOp(cmd) {  // oscilloscope reading
+  if (cmd == "Run") {
+    document.getElementById("rStop").style.display="block";
+    document.getElementById("rRun").style.display="none";
+    rState="Run";
+	generateRamp();
+  } else {
+    document.getElementById("rStop").style.display="none";
+    document.getElementById("rRun").style.display="block";
+    rState="Stop";
   }
 }
 
@@ -932,11 +1025,11 @@ function decToHex(x,d) {
    var num = Math.round(x);
    var div;
    var rest;
-   for (var i = 0; i < d; i++) {    //  8 hex digits
+   for (var i = 0; i < d; i++) {    //  d hex digits
        div = Math.trunc(num/16);
 	   rest = num % 16;
 	   // alert(num +"x" + div + "x" + rest);
-	   hex = hexN[rest] + hex;
+	   hex = hexN[rest] + hex;  // LSB...MSB
 	   num = div;
    }
    return hex;
@@ -958,6 +1051,26 @@ function hexToDec(x) {
    return dec;
 }
 
+function isPrime (n) {
+   if (n===1){
+      return false;
+   }else if(n === 2){
+      return true;
+   }else{
+      for(let x = 2; x < n; x++){
+         if(n % x === 0){
+            return false;
+         }
+      }
+      return true;
+   };
+};
+
+function nearestPrime(num) {
+   while(!isPrime(++num)){};
+   return num;
+};
+
 function genCmdAWG() {  // generate serial command for BASYS3
   var cmd = "";
   var maxV = 3.3;
@@ -966,12 +1079,15 @@ function genCmdAWG() {  // generate serial command for BASYS3
   var frequency = unitToValue(document.getElementById("frequencyVal").value);
   var amp = unitToValue(document.getElementById("amplitudeVal").value);
   var off = unitToValue(document.getElementById("offset1Val").value);
+  var dataMax = parseInt(document.getElementById("dataMax").value);
   var start;   // Triangle parameters
   var stop;
   var step;
   var repeat;
   var ampC;
   var offC;
+  var infoX ="";
+    infoX = "Frequency: " + valueToUnit(frequency) ;
 	if (curveTyp == 0) {  // DC
 	   cmd = "T"; // triangle 
 	   start = Math.trunc(maxC / maxV * off);
@@ -986,6 +1102,18 @@ function genCmdAWG() {  // generate serial command for BASYS3
        if (offC >= 2*1024*1024*1024) { offC = 2*1024*1024*1024-1; }
 	   if ((offC + ampC) >= 2*1024*1024*1024) { ampC = 2*1024*1024*1024-1-offC; } 	   
 	   if ((offC - ampC) < 0) { ampC = offC; }
+	   // correct step with better frequency for good fft
+	   // timeBase = 4 fft good 256 samples, 1 ms/div time base
+	   var timeX = (timeBase + 1)/4; // (timeBase + 1)/3;
+   	   var nCycle = Math.round(dataMax / fCalc * 13 * timeX * 128 * frequency); // number of cycles
+	   // fix nCycle to odd (prime)
+	   if ((nCycle % 2) == 0) { nCycle = nCycle + 1; }
+	   var frequency1 = nCycle * fCalc / dataMax / 13 / 128 / timeX; // odd corrected frequency
+       frequency = nearestPrime(nCycle) * fCalc / dataMax / timeX / 13 / 128; // prime corrected frequency	   
+	   infoX = infoX + " is mapped to " + valueToUnit(frequency1) 
+	           + " prime " + valueToUnit(frequency) + " <br>\n"
+			   + " Cycles " + nCycle ;
+	   // end correct step size
 	   step = Math.trunc(1024*1024*1024/(fCalc/13/frequency));
 	   // step = 100900;
 	   cmd = cmd + 	decToHex(step,8);   // step makes frequency
@@ -1042,6 +1170,7 @@ function genCmdAWG() {  // generate serial command for BASYS3
        cmd = cmd + 	decToHex(step,4);     
        cmd = cmd +  decToHex(repeat,8);  // frequency
 	}
+	document.getElementById("infoX").innerHTML = infoX;
 	document.getElementById("cmd").innerHTML = cmd;
 	document.getElementById("step").innerHTML = "Start: " + start + " Stop: " + stop
 	   + " Step: " + step + " Repeat: " + repeat;
@@ -1221,6 +1350,11 @@ function confOsc() {
 		  // update command field
 		  document.getElementById("cmdTxt").value = cmdO;
 		  sendCmdC();                           // send OSC configuration  
+		  // update cynchronized sine function
+          genCmdAWG();
+          if (aState == "Run") {
+	        sendCmd();
+          }
 }
 
 function updateOSC(){
@@ -1432,7 +1566,7 @@ function listenCanvas(event) { // event listener for canvas How to add?
       if (mouseX == 1) {   // x - axis right left canvas area? 
         mouseCurrX = Math.round(event.clientX - rect.left);
         mouseCurrY = Math.round(event.clientY - rect.top);
-	    channels[xAxisIndex].offset = offsetStart - Math.trunc((mouseCurrX - mouseStartX) / widthX * 100)/10 * channels[xAxisIndex].range;
+	    channels[xAxisIndex].offset = offsetStart + Math.trunc((mouseCurrX - mouseStartX) / widthX * 100)/10 * channels[xAxisIndex].range;
         document.getElementById("mouse").innerHTML = "Move " + mouseCurrX + "," + mouseCurrY + "," + mouseX;		
 	    updatePlot();
 		document.getElementById(lines[xAxisIndex]+"Val").value = valueToUnit(channels[xAxisIndex].offset) + channels[xAxisIndex].unit;
@@ -1624,7 +1758,7 @@ function genAWGData() {
 	var step = hexToDec(cmd.substring(9,13));   // 16 Bit
 	var repeat = hexToDec(cmd.substring(13,21)); // 32 Bit
 	if (repeat < 1) { repeat = 1; }
-	alert(start + "," + step + "," + stop + "," + repeat);
+	// alert(start + "," + step + "," + stop + "," + repeat);
 	// T26C9745C4D930000C350
 	//  starstopstep
 	// 9929,19859,29788,50000
@@ -2028,6 +2162,371 @@ function generateHisto(){
 window.addEventListener("load",generateData());
 
 //----------------------------------------------------------------------------------//
+//-------------------- Ramp Test INL and DNL ---------------------------------------//
+//----------------------------------------------------------------------------------//
+
+var finshed = true;
+var oscObj = [];
+var offsetStart = 0;
+var runs = 1;
+var runX = 1;
+var realRampStep = 0;
+
+function generateRamp() { // start Ramp
+   oscObj = [];           // Empty data object
+   offsetStart = 0;
+   runX = 1;
+   generateRampX();
+}
+
+function generateRampX() {
+  var stepCode = Math.trunc(parseInt(document.getElementById("codesStep").value));  // number of code values
+  if (stepCode <= 0) { stepCode = 1; }
+  var startCode = parseInt(document.getElementById("codesStart").value) + offsetStart;  // number of code values
+  var endCode = Math.trunc(parseInt(document.getElementById("codesEnd").value) / 2) ;  // number of code values
+  // Check how many points necessary > 4k?
+  runs = Math.trunc(((endCode - startCode)/stepCode) / 1024 ) + 1;  // How many 4k blocks 4 samples each 
+  realRampStep = stepCode; 
+  stepCode = stepCode * runs;
+
+  document.getElementById("inlResult").innerHTML = "<img src='../ImagesS/1LBN.gif' width='32' height='32'>" 
+                                                    + " Measurement ongoing. Run " + runX + " of " + (runs + 1); 
+  runX = runX + 1;
+  
+  endCode = Math.trunc((endCode - startCode)/stepCode) * stepCode + startCode; // Ramp codes down = up
+  
+  offsetStart = offsetStart + realRampStep;  // for next data set
+ 
+    // Make triangle waveform
+    // Repeat 832 because DAC 100MHz, ADC 8.32us
+    cmdText = "T" + decToHex(startCode,4) + decToHex(endCode,4)
+                  + decToHex(stepCode,4) + decToHex((4*832),8);    // 832, 416,208  4 samples 4*832    
+    // sendCmd "T"
+    document.getElementById("cmd").innerHTML = cmdText;
+    sendCmd();
+    // Configure oscilloscope with highest sample rate and 8k buffer
+    document.getElementById("dataMax").value = 8192;
+    cmdText ="O20000001";         
+    // sendCmd "O"
+    document.getElementById("cmd").innerHTML = cmdText;
+    sendCmd();
+    // sendCmd "U" acquiring data
+    document.getElementById("cmd").innerHTML = "U";
+    sendCmd();
+    finished = false;
+}
+
+function nextRamp() {
+  var dataMax2 = Math.round(dataMax/2);
+  // Selected channel 
+  var rampSrc = parseInt(document.getElementById("rampSrc").value);  // number of code values
+
+	// make object array with values
+      for (var i = 0; i < dataMax2; i++) {              // number of codes loop  
+        var point = {  
+		  codeAWG : dataOSC3[i +   1 * dataMax2],           // AWG code
+          codeOSC : dataOSC3[i +  rampSrc * dataMax2],  // all channels
+          codeOSC1 : dataOSC3[i +  2 * dataMax2],  // all channels
+          codeOSC2 : dataOSC3[i +  3 * dataMax2],  // all channels
+          codeOSC3 : dataOSC3[i +  4 * dataMax2],  // all channels
+          codeOSC4 : dataOSC3[i +  5 * dataMax2]  // all channels
+
+	    }
+		oscObj.push(point);
+	  }	  
+  
+    // check if finished
+  if (offsetStart >= 16) {
+    finished = true;
+    document.getElementById("rStop").style.display="none";
+    document.getElementById("rRun").style.display="block";
+    rState="Stop";
+    ramp();
+  } else { // sent ramp command and acquire next block of data
+    generateRampX()
+  }
+}
+
+function ramp() {
+    var avgVal = [];
+	var idealVal =[];
+	var dataINL = [];
+	var dataDNL = [];
+    var nrCodes;  // number of code values
+    var dataMax2 = Math.round(dataMax/2);
+
+	// Selected channel 
+    var rampSrc = parseInt(document.getElementById("rampSrc").value);  // number of code values
+
+	for (var j = 0; j < oscObj.length; j++) { 	   // Copy correc5t channel to codeOSC
+       if (rampSrc == 1) oscObj[j].codeOSC = oscObj[j].codeAWG;
+       if (rampSrc == 2) oscObj[j].codeOSC = oscObj[j].codeOSC1;
+       if (rampSrc == 3) oscObj[j].codeOSC = oscObj[j].codeOSC2;
+       if (rampSrc == 4) oscObj[j].codeOSC = oscObj[j].codeOSC3;
+       if (rampSrc == 5) oscObj[j].codeOSC = oscObj[j].codeOSC4;
+	}
+	
+	// sort oscObj for averaging
+    oscObj.sort(function(a,b) { // sort for codeAWG
+         if ( a.codeAWG < b.codeAWG )
+             return -1;
+         if ( a.codeAWG > b.codeAWG )
+             return 1;
+         return 0;
+    });
+	
+    var samplesX = oscObj.length;     	
+	
+      for (var i = 0; i < samplesX; i++) {              // number of codes loop  
+		avgVal[i] = i;                                          // integer position
+		avgVal[i + samplesX] = oscObj[i].codeAWG;         // AWG1
+		avgVal[i + 2 * samplesX] = oscObj[i].codeOSC; //
+	  }	  
+	
+    var oscObjAvg = [];
+    var codeAWGNow = oscObj[0].codeAWG; 
+	oscObjAvg[0] = { 
+	    codeAWG : oscObj[0].codeAWG,
+	    codeOSC : oscObj[0].codeOSC,
+		n : 1
+	}
+	var nAvg = 0;
+	for (var j = 1; j < oscObj.length; j++) { 	   // Averaging
+        if (oscObj[j].codeAWG == codeAWGNow) {
+		   oscObjAvg[nAvg].codeOSC += oscObj[j].codeOSC;
+           oscObjAvg[nAvg].n += 1;		   
+		} else {
+		  var pointX = {
+	         codeAWG : oscObj[j].codeAWG,
+	         codeOSC : oscObj[j].codeOSC,
+		     n : 1
+		  }
+		  codeAWGNow = oscObj[j].codeAWG;
+		  oscObjAvg.push(pointX);
+		  nAvg = nAvg + 1;
+		}
+	}
+	nrCodes = oscObjAvg.length; // Number of unique codes
+	for (var j = 0; j < nrCodes; j++) { 	   // Averaging
+	  oscObjAvg[j].codeOSC = oscObjAvg[j].codeOSC / oscObjAvg[j].n;
+	}
+	// min, max OSC AWG
+	var minAWG = oscObjAvg[0].codeAWG;
+	var maxAWG = oscObjAvg[0].codeAWG;
+	var minOSC = oscObjAvg[0].codeOSC;
+	var maxOSC = oscObjAvg[0].codeOSC;
+	for (var j = 1; j < nrCodes; j++) { 	   // Averaging
+	  if (oscObjAvg[j].codeOSC < minOSC) minOSC = oscObjAvg[j].codeOSC;
+	  if (oscObjAvg[j].codeOSC > maxOSC) maxOSC = oscObjAvg[j].codeOSC;
+	  if (oscObjAvg[j].codeAWG < minAWG) minAWG = oscObjAvg[j].codeAWG;
+	  if (oscObjAvg[j].codeAWG > maxAWG) maxAWG = oscObjAvg[j].codeAWG;
+	}
+	var rangeAWG = maxAWG - minAWG;
+	var rangeOSC = maxOSC - minOSC;
+	var bins = nrCodes;
+    var lsb = rangeOSC / (nrCodes-1);
+	// alert(lsb);
+	
+	// make array with ideal values
+    for (var j = 0; j < nrCodes; j++) { 	            // set codes in avgVal
+      idealVal[j] = minOSC + (oscObjAvg[j].codeAWG - minAWG) * rangeOSC/rangeAWG;
+	  dataINL[j] = oscObjAvg[j].codeAWG;                // x -axis INL
+	  dataDNL[j] = oscObjAvg[j].codeAWG;                // x - axis DNL
+	}
+    
+    var inlMin = 0;
+    var inlMax = 0;
+    var dnlMin = 0;
+    var dnlMax = 0;
+	dataINL[nrCodes] = 0; // INL
+    dataDNL[nrCodes] = 0; // DNL
+    for (var i = 1; i < nrCodes; i++) {              // number of codes loop  
+        var inlX = (oscObjAvg[i].codeOSC - idealVal[i])/lsb;
+		var dnlX = (oscObjAvg[i].codeOSC - oscObjAvg[i-1].codeOSC - lsb)/lsb;
+		dataINL[nrCodes + i] = inlX; // INL
+        dataDNL[nrCodes + i] = dnlX; // DNL
+		if (inlX > inlMax) inlMax = inlX;
+		if (inlX < inlMin) inlMin = inlX;
+		if (dnlX > dnlMax) dnlMax = dnlX;
+		if (dnlX < dnlMin) dnlMin = dnlX;
+	}
+
+    document.getElementById("inlResult").innerHTML = "INL " + inlMin.toPrecision(3) 
+	   + ".." + inlMax.toPrecision(3) + " DNL " + dnlMin.toPrecision(3) + ".." + dnlMax.toPrecision(3);
+   
+    let now = new Date();
+    let nowTxt = now.getFullYear() + "/" + (now.getMonth()+1)
+                   + "/" + now.getDate() + " " + now.getHours()
+				   + ":" + now.getMinutes() + ":" + now.getSeconds()+ "." + now.getMilliseconds();			
+		nowTxt += " INL DNL from " + (samplesX) + " points generated from " 
+		          + oscObjAvg[0].codeAWG + " to " + oscObjAvg[nrCodes-1].codeAWG + " in " + nrCodes + " steps";
+
+    // alert(activeIndex);
+	
+	// generate chart
+	// avgVal,nrCodes
+	// dataINLDNL,nrCodes
+    ScatterPlot("inlChart",nowTxt,dataINL,nrCodes,
+	              "Code","lin","minmax",
+				  "INL","lin","auto","Grid"  //Grid
+				 );
+    ScatterPlot("dnlChart",nowTxt,dataDNL,nrCodes,
+	              "Code","lin","minmax",
+				  "DNL","lin","auto","Grid"  //Grid
+				 );
+    // show data for one channel: code, real, ideal, INL, DNL
+    // setLegend("Real,Ideal,INL,DNL");
+    ScatterPlotX("rampChart",nowTxt,avgVal,samplesX,
+	              "Code","lin","minmax",
+				  "Value, INL, DNL","lin","minmax","Fine"  //Grid
+				 );
+  // Make a lookup table (lookupList) with this data (oscObjAvg)
+
+	// sort oscObjAvg with OSC codes
+    oscObjAvg.sort(function(a,b) { // sort for codeAWG
+         if ( a.codeOSC < b.codeOSC )
+             return -1;
+         if ( a.codeOSC > b.codeOSC )
+             return 1;
+         return 0;
+    });
+  
+  var maxStep = 0;	
+  if (nrCodes > 2) {  
+	// get maximum step size
+    maxStep = oscObjAvg[1].codeOSC - oscObjAvg[0].codeOSC;	
+	var minOSC = oscObjAvg[0].codeOSC;
+	var maxOSC = oscObjAvg[oscObjAvg.length - 1].codeOSC;
+	for (var j = 2; j < nrCodes; j++) { 	   // Getr maximum step size
+      var stepOSCX = oscObjAvg[j].codeOSC - oscObjAvg[j-1].codeOSC;	
+	  if (stepOSCX > maxStep) maxStep = stepOSCX;
+	}
+  }	
+// make ideal curve lookup table
+// maximum step = 0.5..1.5 LSB
+  var stepScale = parseFloat(document.getElementById("stepScale").value);  // number of code values
+    maxStep = stepScale * maxStep;
+  if (maxStep == 0 ) { alert("maxStep = 0"); }
+  else {  // maxStep not 0
+   var maxCodes = (maxOSC - minOSC) / maxStep;
+// Look for suitable values going through sorted array
+   var lookupList = [];
+   lookupList[0] = oscObjAvg[0].codeAWG;
+   var nextVal = oscObjAvg[0].codeOSC + maxStep;
+   var indexL = 1;
+   lookupList[indexL] = oscObjAvg[1].codeAWG;
+   var errorL = Math.abs(oscObjAvg[1].codeOSC - nextVal);
+   for (var i = 2; i < nrCodes; i++) {   // get lookup list 
+     var errorN = oscObjAvg[i].codeOSC - nextVal;
+     if (errorN > 0.5 * maxStep) { // next value
+	    indexL = indexL +1;
+		nextVal = nextVal + maxStep;
+		errorN = oscObjAvg[i].codeOSC - nextVal;
+		errorL = Math.abs(errorN);
+        lookupList[indexL] = oscObjAvg[i].codeAWG;
+     }	 
+	 if (Math.abs(errorN) < errorL) {   // absolute error better
+        lookupList[indexL] = oscObjAvg[i].codeAWG;
+		errorL = Math.abs(errorN);
+	 }
+   }				
+   var rangeN = indexL;   
+   for (var i = indexL + 1; i < 8 * 1024; i++) {   // fill up rest until 8k 
+      lookupList[i] = oscObjAvg[nrCodes-1].codeAWG;
+   }
+   for (var i = 0; i < 4 * 1024; i++) {   // copy lower 4k to upper 4k: 8k 
+      lookupList[i + 4*1024] = lookupList[i];
+   }
+
+   var lText = "Min: " + oscObjAvg[0].codeOSC + " Max: " + oscObjAvg[nrCodes-1].codeOSC 
+              + " Step: " + maxStep + " New Codes: " + rangeN 
+			  + " New Code Range: " + (rangeN * 16) + "<br>\n";
+   lText += "Lookup Table: <br>\n";
+   var xText = lText;  
+   for (var i = 0; i < 16 * 4 * 8; i++) {   // fill up rest 
+      for (var j = 0; j < 16; j++) {   // fill up rest 
+         lText += lookupList[i * 16 + j] + ",";
+		 xText += lookupList[i * 16 + j] + ",";
+      }
+	  lText = lText + "<br>\n";
+	  xText = xText +"\n";
+   }
+   xText = xText.substring(0, xText.length-2);
+   document.getElementById("bestL").innerHTML = lText;
+   document.getElementById("lookupX").value = xText;
+   // calculate new INL, DNL and redo with different maxStep if necessary
+  
+  } // End maxStep not 0
+}
+
+//----------------------------------------------------------------------------------//
+//-------------------- Lookup Table ---------------------------------------------//
+//----------------------------------------------------------------------------------//
+
+function sendLookup() {
+ var nrVal = 8 * 1024;
+ deactivateLookup();  // address multiplexing between AWG and UART ??
+ var lookupText = lookupX.value; // get string
+ // convert string to hex values
+ var cmdText = "";
+ lookupText = lookupText.replace(/(\r\n|\n|\r)/gm,""); // remove carriage return
+ lookupText = lookupText.replace(/" "/gm,"");          // remove spaces
+ var lookupArr = lookupText.split(",");                // make array
+ while (lookupArr.length < nrVal) {  // fill up to 8k values
+     lookupArr.push(0);
+ }
+ for (var i = 0; i < nrVal; i++) { 	// convert all values to hex
+   cmdText = cmdText + decToHex(parseInt(lookupArr[i]),4);
+ } 
+
+  cmdText = "R" + cmdText; //
+ // sendCmd "R" data
+  document.getElementById("cmd").innerHTML = cmdText;
+  sendCmd();
+}
+
+function defaultLookup(md) {
+ var nrVal = 8 * 1024;
+ deactivateLookup(); // address multiplexing between AWG and UART ??
+ // convert string to hex values
+ var cmdText = "";
+ var lookupText = "";
+ var fixed = parseInt(document.getElementById("lookupVal").value);
+ for (var i = 0; i < nrVal; i++) { 	// convert all values to hex
+   var k = i * 16;                   // upscale to 64 k 
+   if (md == 1) k = 8 *1024 - 1 - i * 16; // reverse 
+   if (md == 2) k = fixed;                 
+   if (md == 3) k = Math.trunc(i / 128) * 128 * 16; // 128 gives 32 levels                 
+   k = k % (64 * 1024);                  // maximum 16 bit
+   cmdText = cmdText + decToHex(k,4);
+   lookupText = lookupText + k + ",";
+ } 
+ lookupX.value = lookupText;
+ // sendCmd "R" data
+  cmdText = "R" + cmdText; // Some problems with VHDL?! .substring(1)
+  document.getElementById("cmd").innerHTML = cmdText;
+  sendCmd();
+}
+
+function activateLookup() {
+ // send X command
+  document.getElementById("cmd").innerHTML = "Q";
+  sendCmd();
+}
+
+function deactivateLookup() {
+ // send X command
+  document.getElementById("cmd").innerHTML = "X";
+  sendCmd();
+  if (aState == "Run") { // Keep AWG running 
+	// Action 
+    genCmdAWG();      // update command
+	// check simulation?
+	sendCmd();        // send command
+  }
+}
+
+//----------------------------------------------------------------------------------//
 //-------------------- NodeJS commands ---------------------------------------------//
 //----------------------------------------------------------------------------------//
 
@@ -2170,6 +2669,10 @@ var fullDataT = "";
 				// do FFT
 				if (fState == "Run") {
 				  generateFFT();
+				}
+				// do INL DNL
+				if (rState == "Run") {
+				   nextRamp();
 				}
 				
 			   } //---------------------- End of received data processing ------------------>
