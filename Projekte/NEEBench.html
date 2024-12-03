@@ -118,12 +118,13 @@ td.top {vertical-align: top;}
   <tr>
   <td> System: </td>
     <td>Board:</td>
-	<td id="board">
+	<td id="boardT">
 	 <select name="board" id="board" onchange="selectBoard()">
       <option value="0"> BASYS 3 </option>
-      <option value="1"> Simulation</option>
-      <option value="2"> Arduino MKR Wifi 1010</option>
-      <option value="3"> Raspberry Pi</option>
+      <option value="1"> Simulation not working yet</option>
+      <option value="2"> Arduino MKR Wifi 1010 not working yet</option>
+      <option value="3"> Raspberry Pi not working yet</option>
+      <option value="4"> Infineon XMC4700 Relax Kit not working yet</option>
       </select>
     </td>
   </tr>
@@ -142,7 +143,10 @@ td.top {vertical-align: top;}
   </tr>
   <tr>
     <td colspan="2">OSC Sampling time: </td>
-	<td> <span id="timeSampling">8.32 us</span>
+	<td> <input type="text" value="8.32 us" size="7" id="timeSampling" onkeyup="selectBoard()"/> 
+    </td>
+    <td colspan="2">OSC maximum buffer size: </td>
+	<td> <input type="text" value="8192" size="5" id="oBufVal" onkeyup=""/>
     </td>
   </tr>
   <tr>
@@ -154,10 +158,22 @@ td.top {vertical-align: top;}
     <td>Minimum voltage:</td>
 	<td id="AWG1MinV"><input type="text" value="0 V" size="5" id="AWG1MinVVal" onkeyup=""/></td>
     <td>Maximum voltage:</td><td id="AWG1MaxV"><input type="text" value="3.3 V" size="5" id="AWG1MaxVVal" onkeyup=""/></td>
-    <td>Resolution:</td><td id="AWG1Res"><input type="text" value="16" size="5" id="AWG1ResVal" onkeyup=""/> Bits</td>
+    <td>Resolution (Bits):</td><td id="AWG1Res"><input type="text" value="16" size="5" id="AWG1ResVal" onkeyup=""/></td>
   </tr>
   <tr>
-  <td colspan="7"> <img src="../ImagesS/BASYS3_V04_01.png" width="400"</td>
+  <td colspan="2"> AWG1 sampling time: </td>
+  <td id="AWG1ts"><input type="text" value="10 ns" size="5" id="AWG1tsVal" onkeyup=""/></td>
+  </tr>
+  <tr>
+  <td colspan="2"> Lookup buffer size: </td>
+  <td id="lBuf"><input type="text" value="8192" size="5" id="lBufVal" onkeyup=""/></td>
+  </tr>
+  
+  <tr>
+  <td colspan="7"> 
+   <span  id="board0" style="display:block"><img src="../ImagesS/BASYS3_V04_01.png" width="400"></span>
+   <span  id="board2" style="display:block"><img src="../ImagesS/Arduino_MKR_WIFI_1010_ADCDAC.png" width="400"></span>
+  </td>
   </tr>
   </table>
 
@@ -167,42 +183,52 @@ td.top {vertical-align: top;}
   <br>
   <hr>
   <br>
-Implemented commands with command example values according to FPGA BASYS 3 board:<br>
-"X": (length = 1) initialize<br>
-"S": (length = 25) sine signal, followed by 24-hex numbers: step, amplitude, offset each 32 bit<br>
+<h4>Implemented commands with command example values according to FPGA BASYS 3 board:</h4><br>
 <br>
-Example f = 1 kHz, amp = 1 V, offset = 1 V as shown in AWG1: S0000A7C526C9B26C26C9B26C<br>
-<br>
-   step = 0000A7C5, amplitude = 26C9B26C, offset = 26C9B26C<br>
-<br>
-Sine for FFT for BASY3:<br>
-FFT looks good for Oscilloscope up to 1 ms/div.<br>
-3 cycles, 1.40851 kHZ, 196608 = 3*64*1024      S000300001364D9361364D936<br>
-11 cycles, 5.16452 kHz, 720896 = 11* 64 *1024            S000B00001364D9361364D936<br>
-101 cycles, 47.419625 kHz, 6619136 = 101 * 64 * 1024	     S006500001364D9361364D936<br>
-<br>
-"T": (length = 21) triangle signal, followed by 20-hex numbers: start, stop, step (16-bit each), repeat (32 bit)<br>
-<br>
-Example pulse f = 1 kHz, amp = 1 V, offset = 1 V as shown in AWG1: T00004D924D920000C350<br>
-<br>
+<table>
+<tr><td>"X"</td><td> (length = 1) initialize</td></tr>
+<tr><td style="vertical-align:top">"S"</td>
+    <td> (length = 25) sine signal, followed by 24-hex numbers: step, amplitude, offset each 32 bit<br>
+    <br>
+     Example f = 1 kHz, amp = 1 V, offset = 1 V as shown in AWG1: S0000A7C526C9B26C26C9B26C<br>
+    <br>
+     step = 0000A7C5, amplitude = 26C9B26C, offset = 26C9B26C<br>
+    <br>
+     Sine for FFT for BASY3:<br>
+     FFT looks good for Oscilloscope up to 1 ms/div.<br>
+     3 cycles, 1.40851 kHZ, 196608 = 3*64*1024      S000300001364D9361364D936<br>
+     11 cycles, 5.16452 kHz, 720896 = 11* 64 *1024            S000B00001364D9361364D936<br>
+     101 cycles, 47.419625 kHz, 6619136 = 101 * 64 * 1024	     S006500001364D9361364D936<br>
+    </td></tr>
+<tr><td style="vertical-align:top">"T"</td>
+    <td> (length = 21) triangle signal, followed by 20-hex numbers: start, stop, step (16-bit each), repeat (32 bit)<br>
+      <br>
+       Example pulse f = 1 kHz, amp = 1 V, offset = 1 V as shown in AWG1: T00004D924D920000C350<br>
+      <br>
        start = 0000, stop = 4D92, step = 4D92, repeat = 0000C350<br> 
-<br>
-Example triangle f = 1 kHz, amp = 1 V, offset = 1 V as shown in AWG1: T00004D8A001900000040<br>
-<br>
-Example stair f = 1 kHz, amp = 1 V, offset = 1 V as shown in AWG1: T00004D8F0F8300002710<br>
-<br>
-"U": (length = 1) start sending data: chunks of block of data are sent: 
+      <br>
+       Example triangle f = 1 kHz, amp = 1 V, offset = 1 V as shown in AWG1: T00004D8A001900000040<br>
+      <br>
+       Example stair f = 1 kHz, amp = 1 V, offset = 1 V as shown in AWG1: T00004D8F0F8300002710<br>
+      <br>
+	  </td></tr>
+<tr><td style="vertical-align:top">"U"</td>
+    <td> (length = 1) start sending data: chunks of block of data are sent: 
      AWG (aW), OSC1 (o1), OSC2 (o2), OSC3 (o3), OSC4 (o4); 16 bit each; 20 hex values <br>
      The first transmission has the current index (cP) stored. One extra transmission, 
 	 because there can be an ongoing conversion at the current index.<br>	
      "U01230123012301230123YX01230123012301230123Y..."<br>
-      U(o4)(o3)(cP)(o1)(AW)YX(o4)(o3)(o2)(o1)(AW)Y...<br>	  
-"V": Connect switches to output.<br>
-"O": (length = 9) Oscilloscope block size 16 bit and sampling rate 16 Bit (V_06)<br>
-     Command: O02000000 : Block size x0200 = 512; timeBase 0000 8.32 us (BASYS 3 XADC)<br>
-"R": command transfers 8k data 16 bit hex data to lookup table for digital IOs<br>
-     R0000..FFFF<br>
-"Q": command activates the lookup table<br>	 
+      U(o4)(o3)(cP)(o1)(AW)YX(o4)(o3)(o2)(o1)(AW)Y...<br>
+    </td></tr>	  
+<tr><td>"V"</td><td> Connect switches to output.</td></tr>
+<tr><td style="vertical-align:top">"O"</td>
+    <td> (length = 9) Oscilloscope block size 16 bit and sampling rate 16 Bit (V_06)<br>
+      Command: O02000000 : Block size x0200 = 512; timeBase 0000 8.32 us (BASYS 3 XADC)</td></tr>
+<tr><td style="vertical-align:top">"R"</td>
+    <td> command transfers 8k data 16 bit hex data to lookup table for digital IOs<br>
+     R0000..FFFF</td></tr>
+<tr><td>"Q"</td><td> command activates the lookup table</td></tr>	 
+</table>
 <br>
 
  
@@ -638,9 +664,9 @@ Digital signal processing and control loops<br>
  var dataIndex = 1;
 
 var curveTyp = 1;
-var e;      // event
-var aXY = [];   // x y values AWG
-var aGrN = 64;  // number of xy values AWG
+var e;                // event
+var aXY = [];         // x y values AWG
+var aGrN = 64;        // number of xy values AWG
 var aState = "Stop";  // awg1 state
 var oState = "Stop";  // oscilloscope state
 var fState = "Stop";  // FFT state
@@ -689,6 +715,20 @@ function tabAct(x) { // show only active tab
   tabClass[x].classList.remove("tb");
   tabClassDiv[x].style.display = "block";
 
+}
+
+function selectBoard() {
+  // 0 FPGA 1 Simulation 2 Arduino 3 RaspberryPi 4 Infineon
+  var boardX = document.getElementById("board").value;
+  document.getElementById("board0").style.display = "none";
+  document.getElementById("board2").style.display = "none";
+  if (boardX == 0) {
+    document.getElementById("board0").style.display = "block";
+    document.getElementById("timeSampling").value = valueToUnit(8.32E-6) + "s";
+  } else if (boardX == 2) {
+    document.getElementById("board2").style.display = "block";
+    document.getElementById("timeSampling").value = valueToUnit(380E-6) + "s";
+  }
 }
 
 function aOp(cmd) {  // AWG operation
@@ -1087,46 +1127,65 @@ function genCmdAWG() {  // generate serial command for BASYS3
   var ampC;
   var offC;
   var infoX ="";
-    infoX = "Frequency: " + valueToUnit(frequency) ;
+  infoX = "Frequency: " + valueToUnit(frequency) ;
+  var nSample = 13 * 128;  
+  // board management
+  var boardX = parseInt(document.getElementById("board").value);
+  // alert(boardX);
+  if (boardX == 0) { // FPGA
+         // document.getElementById("timeSampling").value = 8.32E-6;
+	     nSample = 13 * 128; // 8.32us / 10 ns * 2 FGA = Math.trunc(8.32E-6/10E-9*2) 
+		 maxC = 32767;
+  } else if (boardX == 2) { // Arduino
+         // document.getElementById("timeSampling").value = 360E-6;
+	     nSample = 78000 * 5; // 360us / 10 ns * 2 Arduino Maker WiFi = Math.trunc(360E-6/10E-9 * 2 * 3) 
+         maxC = 4095;
+		 timeBase = 1;
+		 fCalc = 1E8 / 6; 
+  }
+
 	if (curveTyp == 0) {  // DC
-	   cmd = "T"; // triangle 
+	   cmd = "T";         // triangle as DC with start = stop
 	   start = Math.trunc(maxC / maxV * off);
        cmd = cmd + 	decToHex(start,4);   
        cmd = cmd + 	decToHex(start,4);  // stop =start DC   
-       cmd = cmd + 	"0001";     
+       cmd = cmd + 	"0000";       // before 0000 FPGA working??     
        cmd = cmd +  "00020000";  // doesn't matter
+	   stop = start; step = 0; repeat = 512;
 	} else if (curveTyp == 1) {  // Sine
 	   cmd = "S"; // Sine
-	   ampC = Math.trunc( (2*1024*1024*1024-1) / maxV * amp);
+	   ampC = Math.trunc( (2*1024*1024*1024-1) / maxV * amp); // Range 0.. 2^30
        offC = Math.trunc( (2*1024*1024*1024-1) / maxV * off);
        if (offC >= 2*1024*1024*1024) { offC = 2*1024*1024*1024-1; }
 	   if ((offC + ampC) >= 2*1024*1024*1024) { ampC = 2*1024*1024*1024-1-offC; } 	   
 	   if ((offC - ampC) < 0) { ampC = offC; }
 	   // correct step with better frequency for good fft
-	   // timeBase = 4 fft good 256 samples, 1 ms/div time base
-	   var timeX = (timeBase + 1)/4; // (timeBase + 1)/3;
-   	   var nCycle = Math.round(dataMax / fCalc * 13 * timeX * 128 * frequency); // number of cycles
+	   // timeBase = 4 fft good 256 samples, 1 ms/div time base oscilloscope
+	   var timeX = (timeBase + 1)/4; // (timeBase + 1)/3; // 
 	   // fix nCycle to odd (prime)
+	   var nCycle = Math.round(dataMax / fCalc * timeX * nSample * frequency); // number of cycles
 	   if ((nCycle % 2) == 0) { nCycle = nCycle + 1; }
-	   var frequency1 = nCycle * fCalc / dataMax / 13 / 128 / timeX; // odd corrected frequency
-       frequency = nearestPrime(nCycle) * fCalc / dataMax / timeX / 13 / 128; // prime corrected frequency	   
-	   infoX = infoX + " is mapped to " + valueToUnit(frequency1) 
+	   var frequency1 = nCycle * fCalc / dataMax / nSample / timeX; // odd corrected frequency
+       frequency = nearestPrime(nCycle) * fCalc / dataMax / timeX / nSample; // prime corrected frequency	   
+       infoX = infoX + " is mapped to " + valueToUnit(frequency1) 
 	           + " prime " + valueToUnit(frequency) + " <br>\n"
 			   + " Cycles " + nCycle ;
 	   // end correct step size
-	   step = Math.trunc(1024*1024*1024/(fCalc/13/frequency));
+	   step = Math.trunc(1024 * 1024 * 8 / fCalc * nSample * frequency);
 	   // step = 100900;
 	   cmd = cmd + 	decToHex(step,8);   // step makes frequency
        cmd = cmd + 	decToHex(ampC,8);   // amplitude
-       cmd = cmd + 	decToHex(offC,8);  // offset   
+       cmd = cmd + 	decToHex(offC,8);  // offset  
+       start = offC - ampC; stop = offC + ampC; repeat = 0;	   
 	} else if (curveTyp == 2) {  // Pulse
-	   cmd = "T"; // triangle 
+	   cmd = "T";                // triangle as pulse 
 	   start = Math.trunc(maxC / maxV * (off-amp));  // start voltage to code
 	   stop = Math.trunc(maxC / maxV * (off+amp));   // stop voltage to code
 	   if (start < 0) start = 0;                     // no negative code
 	   if (stop > maxC) stop = maxC;                 // stop limited by maximum code
 	   step = stop - start;                          // adjust step to difference
 	   repeat = Math.trunc(1 / frequency / 2 * fCalc);    // 1E8 fFPGA 
+	   // alert(repeat);
        cmd = cmd + 	decToHex(start,4);   
        cmd = cmd + 	decToHex(stop,4);  // stop =start DC   
        cmd = cmd + 	decToHex(step,4);     
@@ -1707,7 +1766,7 @@ function generateData() {
 	
     var factor = 1/(4*16*1024-1); // 1 V range XADC, 64k range
     var offset = 0;
-    var timeSampling = unitToValue(document.getElementById("timeSampling").innerHTML);
+    var timeSampling = unitToValue(document.getElementById("timeSampling").value);
     var timestep = timeSampling * (timeBase + 0);     // XADC 10ns * 8 * 104 cycles conversion +1?
     var dataMax2 = Math.round(dataMax/2);
     for (var i = 0; i < dataMax2; i++) {
@@ -1746,7 +1805,7 @@ function generateData() {
 function genAWGData() {
   dataMax = parseInt(document.getElementById("dataMax").value); // 512: 0200
   var dataMax2 = dataMax/2;
-  // var timeSampling = unitToValue(document.getElementById("timeSampling").innerHTML);
+  // var timeSampling = unitToValue(document.getElementById("timeSampling").value);
   // var timestep = timeSampling * (timeBase + 1);     // XADC 10ns * 8 * 104 cycles conversion
 				 
   var cmd =	document.getElementById("cmd").innerHTML;
@@ -1922,7 +1981,7 @@ function calcHarmonics() {
 	var signal = betrag[0 + gr1 * j];
 	for(var i = 0; i < gr1; i++)  // transfer to object array
       {
-        var timeSampling = unitToValue(document.getElementById("timeSampling").innerHTML);
+        var timeSampling = unitToValue(document.getElementById("timeSampling").value);
 	    var timestep = timeSampling * (timeBase + 1);     // XADC 10ns * 8 * 104 cycles conversion
         if (currUnit == 0) timestep = 1 / nPair;
 	    var objx = {
@@ -2008,7 +2067,7 @@ function generateFFT() {
    // Calculate Magnitude
    var gr1 = Math.round(nPair / 2) - 1;
    for(var i = 0; i < gr1; i++) {   // all buckets, no DC
-     var timeSampling = unitToValue(document.getElementById("timeSampling").innerHTML);
+     var timeSampling = unitToValue(document.getElementById("timeSampling").value);
 	 var timestep = timeSampling * (timeBase + 1);     // XADC 10ns * 8 * 104 cycles conversion
 	 if (currUnit == 0) timestep = 1 / nPair;
 	 //	 var timestep = 8.32E-6;
@@ -2247,6 +2306,7 @@ function nextRamp() {
   }
 }
 
+// Function ramp()
 function ramp() {
     var avgVal = [];
 	var idealVal =[];
@@ -2600,6 +2660,12 @@ var fullDataT = "";
 				 var trgEdge = parseInt(document.getElementById("trgEdge").value);  // Edge
 				 var trgLevel = unitToValue(document.getElementById("trigLevelVal").value); // Level
 				 var factor = 1/(4*16*1024-1); // 1 V range XADC, 64k range
+				 //
+                 var boardX = parseInt(document.getElementById("board").value);
+                 if (boardX == 2) { // Arduino
+                   factor = 1/(4*1024-1);  // 12 Bit 3.3V??
+				 }
+				 
 				 var offset = 0;
 				 trgPos = -1;
 				 var minVal = dataOSC1[Math.round(dataMax/4) + 4 + dataMax * trg]; // Start Position
@@ -2634,22 +2700,32 @@ var fullDataT = "";
 				 trgPos = trgPos - Math.round(dataMax/4);  // was /3 ??
 				 var dataMax2 = Math.round(dataMax/2);
 				 
-				 var timeSampling = unitToValue(document.getElementById("timeSampling").innerHTML);
+				 var timeSampling = unitToValue(document.getElementById("timeSampling").value);
+				 
 				 var timestep = timeSampling * (timeBase + 1);     // XADC 10ns * 8 * 104 cycles conversion
+				 
+				 // voltage range AWG, OSC1, OSC2, OSC3, OSC4
+				 var factorX = [3.3, 1.0, 1.0, 1.0, 1.0]; // FPGA Range
 				 // if (currUnit == 0) { timestep = 1} 
+                 if (boardX == 2) { // Arduino
+                   factorX = [3.3, 1.0, 1.0, 1.0, 3.3];  // Arduino range with PMOD AD2
+				 }
+				 for (var i=0; i<factorX.length; i++) {
+				    factorX[i] = factorX[i] * factor; 
+				 }
 			     for (var i = 0; i < dataMax2; i++) {
 					dataOSC3[i] = i;
 					dataOSC2[i] = (i - dataMax/4) * timestep;
 			        dataOSC3[i + dataMax2] = dataOSC1[ i + trgPos + (dataMax - 2)];                         // AWG code
-			        dataOSC2[i + dataMax2] = dataOSC1[ i + trgPos + (dataMax - 2)] * factor * 3.3 + offset; // AWG 3.3V
+			        dataOSC2[i + dataMax2] = dataOSC1[ i + trgPos + (dataMax - 2)] * factorX[0] + offset; // AWG 3.3V
 			        dataOSC3[i + 2 * dataMax2] = dataOSC1[ i + trgPos + 2 * (dataMax - 2)];
-			        dataOSC2[i + 2 * dataMax2] = dataOSC1[ i + trgPos + 2 * (dataMax - 2)] * factor + offset;
+			        dataOSC2[i + 2 * dataMax2] = dataOSC1[ i + trgPos + 2 * (dataMax - 2)] * factorX[1] + offset;
 			        dataOSC3[i + 3 * dataMax2] = dataOSC1[ i + trgPos + 3 * (dataMax - 2)];
-			        dataOSC2[i + 3 * dataMax2] = dataOSC1[ i + trgPos + 3 * (dataMax - 2)] * factor + offset;
+			        dataOSC2[i + 3 * dataMax2] = dataOSC1[ i + trgPos + 3 * (dataMax - 2)] * factorX[2] + offset;
 			        dataOSC3[i + 4 * dataMax2] = dataOSC1[ i + trgPos + 4 * (dataMax - 2)];
-			        dataOSC2[i + 4 * dataMax2] = dataOSC1[ i + trgPos + 4 * (dataMax - 2)] * factor + offset;
+			        dataOSC2[i + 4 * dataMax2] = dataOSC1[ i + trgPos + 4 * (dataMax - 2)] * factorX[3] + offset;
 			        dataOSC3[i + 5 * dataMax2] = dataOSC1[ i + trgPos + 5 * (dataMax - 2)];
-			        dataOSC2[i + 5 * dataMax2] = dataOSC1[ i + trgPos + 5 * (dataMax - 2)] * factor + offset;
+			        dataOSC2[i + 5 * dataMax2] = dataOSC1[ i + trgPos + 5 * (dataMax - 2)] * factorX[4] + offset;
 				 }
 				 // ready to plot
                  // ScatterPlot("OSC","Oszilloskop",dataOSC2,dataMax2,
@@ -2664,7 +2740,7 @@ var fullDataT = "";
 						   + ":" + now.getMinutes() + ":" + now.getSeconds()+ "." + now.getMilliseconds();			
 				// 1 Msps 8 samples per point 1E6/8						
 				document.getElementById("statusOSC").innerHTML = triggered + " " + nowTxt + " " + dataMax2 + " samples at " 
-				   + valueToUnit(1E6/8) + "Hz/" + valueToUnit(8/1E6) + "s";
+				   + valueToUnit(1/timestep) + "Hz/" + valueToUnit(timestep) + "s";
 				dataIndex = 0;	
 				// do FFT
 				if (fState == "Run") {
