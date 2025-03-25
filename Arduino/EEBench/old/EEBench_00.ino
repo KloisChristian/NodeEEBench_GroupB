@@ -13,7 +13,7 @@
 #define ADC_OSC4          A4
 
 // buffer for values
-
+//TEST
 // Buffer size for acquisition
 int bufSize = 2048 * 5;  // Number of values * 5 channels
 uint16_t bufVal[2048 * 5];  // 2048*5 memory 70%
