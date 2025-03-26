@@ -121,18 +121,41 @@ td.top {vertical-align: top;}
   </table>
   <table>
   <tr>
-    <td>OSC1:</td><td> Arduino pin A1</td>
-    <td>OSC2:</td><td> Arduino pin A2</td>
-    <td>OSC3:</td><td> Arduino pin A3</td>
-    <td>OSC4:</td><td> Arduino pin A4</td>
+    <td>OSC1:</td>
+	<td>
+	  <select name="o1Config" id="o1Config" onchange="setConf()">
+      <option value="0"> PMOD AD2</option>
+     </select>
+	</td>
+    <td>OSC2:</td><td> Arduino pin A1</td>
+    <td>OSC3:</td><td> Arduino pin A2</td>
+    <td>OSC4:</td><td> Arduino pin A3</td>
   </tr>
   <tr>
+    <td colspan="2">Averaging PMOD ADC</td>
+	<td> 
+	  <select name="avgADC" id="avgADC" onchange="setAvg()">
+      <option value="1" selected>1</option>
+      <option value="4">4</option>
+      <option value="16">16</option>
+     </select>
+	</td>
     <td colspan="2">OSC Sampling time: </td>
 	<td> <span id="timeSampling">1.3..4 ms</span>
     </td>
   </tr>
   <tr>
-    <td>AWG1:</td><td> R2R (8 Bit)</td>
+    <td>AWG1: Arduino A0</td>
+	<td>
+	  <select name="a10Config" id="a10Config" onchange="setConf()">
+      <option value="0" selected>R2R</option>
+      <option value="1">C serial</option>
+     </select>
+	  <select name="a11Config" id="a10Config" onchange="setConf()">
+      <option value="0">None</option>
+      <option value="3" selected>PMOD DA2</option>
+     </select>
+    </td>
     <td>AWG2:</td><td> None</td>
   </tr>
   <tr>
@@ -161,7 +184,7 @@ td.top {vertical-align: top;}
   <hr>
   <br>
 
-Implemented commands with command example values according to Arduino DataConverterCharV3.ino sketch and 
+Implemented commands with command example values according to Arduino DataConverterCharV6.ino sketch and 
 StartServerAx.bat starting ServerAx.js:<br>
 <br>
 quiet: Disables console output of data sent to client<br> 
@@ -173,11 +196,20 @@ f&lt;nr&gt;: waveform<br>
      400 &lt;=nr &lt;600 11 period sine<br>
      600 &lt;=nr &lt;800 101 period sine<br>
      1001 period sine<br>
+b sends correction table for binary weighted DAC 12 comma separated values (16 bit)<br>
+     b256,34,8,0,0,0,0,0,0,0<br>
+c sends 8 numbers vor osc1,2,3,4,awg10,11,awg20,21<br>
+     c00001000 : the '1' activates serial DAC<br>
+     c00000000 : the '0' activates R2R DAC<br>
+t sends lookup table<br>
+r sends range for AWG<br>
+a send repeat averaging for MOD ADC<br> 
 <br>
 <br>
+07.02.2025 Implemented serial DAC option and binary correction DataConverterCharV6.ino<br>
 29.11.2023 Implemented Ramp test INL, DNL and lookup table transfer 
 with DataConverterCharV4.ino<br>
- 
+Arduino acquisition is as fast as possible.<br> 
 </div>
 
 <!---------------------- Arbitrary Waveform Generator 1 ------------------------------------------->
@@ -722,6 +754,19 @@ function tabAct(x) { // show only active tab
   tabClass[x].classList.remove("tb");
   tabClassDiv[x].style.display = "block";
 
+}
+
+function setAvg() {  // set averaging
+    var repeatX = parseInt(document.getElementById("avgPMOD").value);
+	document.getElementById("cmd").innerHTML = "a" + awg1;
+	sendCmd();        // send command
+}
+
+function setConf() {  // send configuration
+    var txt ="c0000100000";
+    var awg1 = parseInt(document.getElementById("a10Config").value);
+	document.getElementById("cmd").innerHTML = "c0000" + awg1 + "000";
+	sendCmd();        // send command
 }
 
 function aOp(cmd) {  // AWG operation
@@ -1955,7 +2000,7 @@ function calcHarmonics() {
 	   if (currUnit == 0) unitX = "";
 	   snrText = "<table><tr><td>Magnitude List Channel: </td><td class='bo" + actChan + "'>" + cList[actChan] + "</td></tr></table><br>" +
 	             "<table border='1'>" +
-	             "<tr><td class='bo'>Index</td><td class='bo'>f " + unitX +"</td>" +
+	             "<tr><td class='bo'>" + cList[actChan] + "<br>Index</td><td class='bo'>f " + unitX +"</td>" +
 	             "<td class='bo'> signal<br> magnitude<br> dB</td>" +
 	             "<td class='bo'> Total<br> noise<br> magnitude<br> dB </td></tr>"+ snrText + "</table>";
        document.getElementById('fftList').innerHTML = snrText;
@@ -2178,7 +2223,7 @@ function ramp() {
 	var startCode = parseInt(document.getElementById("codesStart").value);  // number of code values
     var endCode = parseInt(document.getElementById("codesEnd").value);  // number of code values
     var rampSrc = parseInt(document.getElementById("rampSrc").value);  // number of code values
-	var avgNr = dataMax2 / 256 / 4; // Math.round(dataMax2 / (endCode - startCode + 1) / 4); 
+	var avgNr =  Math.round(dataMax2 / (endCode - startCode + 1) / 4); // dataMax2 / 256 / 4;  
 	var nrError = Math.trunc((endCode - startCode + 1)/stepCode);
     nrCodes = Math.trunc((endCode - startCode) / stepCode) + 1; // for graph bins
 	
@@ -2197,19 +2242,20 @@ function ramp() {
     channelsA[rampSrc].selected = "1";
     
 	
-	// make array with average value avgVal	
+	// make array with average value avgVal	which will be analyzed for INL, DNL
 	// fill INL, DNL
 	// dataOSC3 first column output code AWG
     for (var j = 0; j < nrCodes; j++) { 	            // set codes (x values) in avgVal
       avgVal[j] = j;
 	}
-    for (var j = rampSrc; j < rampSrc+1; j++) { 	                   // all 5 channels average measurement data to nrCodes
+	
+    for (var j = rampSrc; j < rampSrc+1; j++) { 	   // channel rampSrc average measurement data to nrCodes
       for (var i = 0; i < nrCodes; i++) {              // number of codes loop  
 	    var avgX = 0;
-		for (var k = 0; k < avgNr; k++) {              // number of codes loop  
+		for (var k = 0; k < avgNr; k++) {              // averaging loop  
            avgX += dataOSC3[(i * stepCode + startCode) * avgNr + j * dataMax2 + k];
 	    }	  
-        avgVal[nrCodes + i] = avgX / avgNr;
+        avgVal[nrCodes + i] = avgX / avgNr;            // 
 	  }	  
 	}
 	
@@ -2217,14 +2263,14 @@ function ramp() {
     for (var j = 0; j < nrCodes; j++) { 	            // set codes in avgVal
       idealVal[j] = j;
 	}
-    for (var j = rampSrc; j < rampSrc + 1; j++) { 	                   // all 5 channels average measurement data to nrCodes
+    for (var j = rampSrc; j < rampSrc + 1; j++) { 	  // channel rampSrc LSB calculation and ideal copy
 	  var startVal = avgVal[nrCodes];
 	  var endVal = avgVal[2 * nrCodes - 1];
 	  var delta = (endVal - startVal) / (nrError-1);
 	  LSB[j] = delta;
 	  for (var i = 0; i < nrCodes; i++) {              // number of codes loop  
         idealVal[ nrCodes + i] = startVal + delta * i;  // one channel only
-	    avgVal[2 * nrCodes + i] = idealVal[nrCodes + i];
+	    avgVal[2 * nrCodes + i] = idealVal[nrCodes + i];       // copy ideal to avgVal
 	  }	  
 	}
     
@@ -2238,7 +2284,7 @@ function ramp() {
     var dnlMin = 0;
     var dnlMax = 0;
 	var inlTotal = 0;
-    for (var j = rampSrc; j < rampSrc+1; j++) { 	                   // all 5 channels average measurement data to nrCodes
+    for (var j = rampSrc; j < rampSrc+1; j++) { 	// channel rampSrc INL, DNL analysis
       dataINL[nrCodes] = 0; // INL
       dataDNL[nrCodes] = 0; // DNL
 	  avgVal[3 * nrCodes] = 0;
@@ -2291,6 +2337,16 @@ function ramp() {
 	              "Code","lin","minmax",
 				  "Value, INL, DNL","lin","minmax","Grid"  //Grid
 				 );
+// -------------------------------------------
+// Missing binary error list
+// Assumption power of 2 values
+// -------------------------------------------
+// What size power of 2?
+// Loop over power of 2
+// {   Difference 2^i and 2^i-1 }
+// save results in section id="??" 
+// button for transfer to Arduino
+// option for averaging at arduino??
 
 // make lookup table
 // cLook checked
