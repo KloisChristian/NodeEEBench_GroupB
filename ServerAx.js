@@ -43,8 +43,13 @@ var serialPort;
        ports => ports.forEach(port => {
 		   console.log("path: " + port.path);
 		   console.log("manufacturer: " + port.manufacturer);
+		   console.log("friendlyName: " + port.friendlyName);
+		   console.log("vendorId: " + port.vendorId);  //2341 MKR Wifi 
+		   console.log("productId: " + port.productId); //8054 MKR Wifi 
 		   // console.log(port.manufacturer.includes('arduino'));
-           if (port.manufacturer.includes('arduino')) {
+           if (typeof port.vendorId === 'undefined') { vendorId="0000"; }
+		   else { vendorId = port.vendorId} 
+		   if (port.manufacturer.includes('arduino') || ( vendorId == '2341') ) {
 		     serialPort = new SerialPort({  //"\\.\COM22"
                 path: port.path,
 	            baudRate: 115200      //  Baud rate befor 19200, 52 us per bit

@@ -51,6 +51,13 @@
 	            baudRate: 115200      //  Baud rate befor 19200, 52 us per bit
              });
            }			 
+           if (port.manufacturer.includes('SEGGER')) { // Infineon XMC4700
+		     devMan = "XMC4700";                
+			 serialPort = new SerialPort({  //"\\.\COM22"
+                path: port.path,
+	            baudRate: 115200      //  Baud rate befor 19200, 52 us per bit
+             });
+           }			 
            if (port.manufacturer.includes('FTDI')) {
 		     devMan = "FPGA FTDI";
 			 serialPort = new SerialPort({  //"\\.\COM22"
@@ -129,14 +136,19 @@ function hexToDec(x) {
 		  function (data) {
 		    // get buffered data and parse it to an utf-8 string
 			var data1 = data.toString('utf-8');
-			dataBuf += data1;
+			// only U command to client
+			var position = data1.search("U");
+			if (position > -1) dataBuf = data1.substring(position);
+			else dataBuf += data1;
 			// you could for example, send this data now to the the client via socket.io
 			// io.emit('emit_data', data);
+			// send only data starting  
 			if ((dataBuf.length >= 22 * dataMax ) && (con)) {   // complete set
 			 console.log(dataBuf.length/22 + "," + dataBuf.length + "," + dataBuf.substring(0,50));     // dataBuf
 		     socket.emit('newData',{value: dataBuf});  // send data to client
 			 dataBuf = "";
 			};
+			console.log(data1);
  		 } );
  
         socket.on('disconnect', function(data){
