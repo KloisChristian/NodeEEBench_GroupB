@@ -197,7 +197,7 @@ tx_busy <= tx_active;
               rmAddress := (others => '0');
 			  rx_mem(7 downto 0) <= rx_data_out; 
 			  rx_mem(13) <= '1'; 
-		   when "01010010" =>                     -- ASCII 52 R sine signal
+		   when "01010010" =>                     -- ASCII 52 R load LUT table
               lut <= '1';
               numD := "1000000000000000";           -- numD = 32 k counts hex values 
                                                     -- Value 32k/4(Hex) 8k 16 bit values?

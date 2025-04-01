@@ -4,13 +4,49 @@
   Signal generator AWG
   Oscilloscope
 */
+#include <SPI.h> // Include library
+#include <Wire.h> // call library
+#define AD7991_Adresse 0x28 // I2C adress of the Pmod AD2 module
 
-#define DAC          A0
+#define CS A6           // CS pin for PMOD DA2 I2C, 8: MOSI, 9:SCK
 
+#define DAC          A0 // Arduino MKR WIFI1010
+
+// R2R DAC Arduino MKR WIFI1010
+/* */
+#define DAC_D0          0 
+#define DAC_D1          1
+#define DAC_D2          2
+#define DAC_D3          3
+#define DAC_D4          4
+#define DAC_D5          5
+#define DAC_D6          6
+#define DAC_D7          13
+/* */
+
+// R2R DAC XMC4700
+/*
+#define DAC_D0          9 // P1.11 
+#define DAC_D1          8 // P1.10
+#define DAC_D2          7 // P1.9
+#define DAC_D3          6 // P2.11
+#define DAC_D4          5 // P2.12
+#define DAC_D5          4 // P1.8
+#define DAC_D6          3 // P1.1
+#define DAC_D7          2 // P1.0
+*/
+
+// 4 channel Analog oscilloscope 
+// XMC4700 A0 (P14.0),A1 (P14.1),A2 (P14.2),A3 (P14.3)
 #define ADC_OSC1          A1
 #define ADC_OSC2          A2
 #define ADC_OSC3          A3
-#define ADC_OSC4          A4
+#define ADC_OSC4          A4  // A4 Arduino, A0 XMC4700
+
+// XMC4700 https://github.com/Infineon/XMC-for-Arduino/wiki/XMC4700-Relax-Kit
+// const int DAC = 48; // Analog output pin P14.8
+// const int DAC1 = 53; // Analog output pin P14.9
+// P0.13 I2C SCL, P3.15 I2C: SDA, P3.9 SPI: SCK, P3.8 SPI MOSI, P3.10 SPI: SS
 
 // buffer for values
 
@@ -20,127 +56,38 @@ uint16_t bufVal[2048 * 5];  // 2048*5 memory 70%
 // lookup for DAC
 // lookup for ADC
 
-uint16_t sineWave[] = { 
- // Ramp
-     0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
-     16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-     32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
-     48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,
-     64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,
-     80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,
-     96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,
-     112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,
-     128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,
-     144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,
-     160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,
-     176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,
-     192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,
-     208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,
-     224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,
-     240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,
-// Sine 1 period
-    128,131,134,137,140,143,146,149,152,155,158,162,165,167,170,173,
-    176,179,182,185,188,190,193,196,198,201,203,206,208,211,213,215,
-    218,220,222,224,226,228,230,232,234,235,237,238,240,241,243,244,
-    245,246,248,249,250,250,251,252,253,253,254,254,254,255,255,255,
-    255,255,255,255,254,254,254,253,253,252,251,250,250,249,248,246,
-    245,244,243,241,240,238,237,235,234,232,230,228,226,224,222,220,
-    218,215,213,211,208,206,203,201,198,196,193,190,188,185,182,179,
-    176,173,170,167,165,162,158,155,152,149,146,143,140,137,134,131,  
-    128,124,121,118,115,112,109,106,103,100,97,93,90,88,85,82,
-    79,76,73,70,67,65,62,59,57,54,52,49,47,44,42,40,
-    37,35,33,31,29,27,25,23,21,20,18,17,15,14,12,11,
-    10,9,7,6,5,5,4,3,2,2,1,1,1,0,0,0,
-    0,0,0,0,1,1,1,2,2,3,4,5,5,6,7,9,
-    10,11,12,14,15,17,18,20,21,23,25,27,29,31,33,35,
-    37,40,42,44,47,49,52,54,57,59,62,65,67,70,73,76,
-    79,82,85,88,90,93,97,100,103,106,109,112,115,118,121,124,
-/* 11 periods in 256 steps */
-128,162,193,220,240,252,255,249,234,211,182,149,115,82,52,27,
-10,1,1,11,29,54,85,118,152,185,213,235,250,255,251,238,
-218,190,158,124,90,59,33,14,2,0,7,23,47,76,109,143,
-176,206,230,246,254,253,243,224,198,167,134,100,67,40,18,5,
-0,5,18,40,67,100,134,167,198,224,243,253,254,246,230,206,
-176,143,109,76,47,23,7,0,2,14,33,59,90,124,158,190,
-218,238,251,255,250,235,213,185,152,118,85,54,29,11,1,1,
-10,27,52,82,115,149,182,211,234,249,255,252,240,220,193,162,
-128,93,62,35,15,3,0,6,21,44,73,106,140,173,203,228,
-245,254,254,244,226,201,170,137,103,70,42,20,5,0,4,17,
-37,65,97,131,165,196,222,241,253,255,248,232,208,179,146,112,
-79,49,25,9,1,2,12,31,57,88,121,155,188,215,237,250,
-255,250,237,215,188,155,121,88,57,31,12,2,1,9,25,49,
-79,112,146,179,208,232,248,255,253,241,222,196,165,131,97,65,
-37,17,4,0,5,20,42,70,103,137,170,201,226,244,254,254,
-245,228,203,173,140,106,73,44,21,6,0,3,15,35,62,93,
 
-/* 51 periods in 256 steps */
-    128,249,203,54,5,124,248,206,57,5,121,246,208,59,4,118,
-245,211,62,3,115,244,213,65,2,112,243,215,67,2,109,241,
-218,70,1,106,240,220,73,1,103,238,222,76,1,100,237,224,
-79,0,97,235,226,82,0,93,234,228,85,0,90,232,230,88,
-0,88,230,232,90,0,85,228,234,93,0,82,226,235,97,0,
-79,224,237,100,1,76,222,238,103,1,73,220,240,106,1,70,
-218,241,109,2,67,215,243,112,2,65,213,244,115,3,62,211,
-245,118,4,59,208,246,121,5,57,206,248,124,5,54,203,249,
-128,6,52,201,250,131,7,49,198,250,134,9,47,196,251,137,
-10,44,193,252,140,11,42,190,253,143,12,40,188,253,146,14,
-37,185,254,149,15,35,182,254,152,17,33,179,254,155,18,31,
-176,255,158,20,29,173,255,162,21,27,170,255,165,23,25,167,
-255,167,25,23,165,255,170,27,21,162,255,173,29,20,158,255,
-176,31,18,155,254,179,33,17,152,254,182,35,15,149,254,185,
-37,14,146,253,188,40,12,143,253,190,42,11,140,252,193,44,
-10,137,251,196,47,9,134,250,198,49,7,131,250,201,52,6,
+char inChar;               // incoming serial char
+char myData[520];          // incoming string Lookup table 256 values 2 hex each
+int cntChar = 0;           // current string position
 
-/* 101 periods in 256 steps */
-    128,206,4,244,67,106,222,0,234,88,85,235,1,220,109,65,
-    245,5,203,131,47,252,12,185,152,31,255,23,165,173,18,254,
-    37,143,193,9,250,54,121,211,2,241,73,100,226,0,230,93,
-    79,238,1,215,115,59,248,6,198,137,42,253,15,179,158,27,
-    255,27,158,179,15,253,42,137,198,6,248,59,115,215,1,238,
-    79,93,230,0,226,100,73,241,2,211,121,54,250,9,193,143,
-    37,254,18,173,165,23,255,31,152,185,12,252,47,131,203,5,
-    245,65,109,220,1,235,85,88,234,0,222,106,67,244,4,206,
-    128,49,251,11,188,149,33,255,21,167,170,20,254,35,146,190,
-    10,250,52,124,208,3,243,70,103,224,0,232,90,82,237,1,
-    218,112,62,246,5,201,134,44,253,14,182,155,29,255,25,162,
-    176,17,254,40,140,196,7,249,57,118,213,2,240,76,97,228,
-    0,228,97,76,240,2,213,118,57,249,7,196,140,40,254,17,
-    176,162,25,255,29,155,182,14,253,44,134,201,5,246,62,112,
-    218,1,237,82,90,232,0,224,103,70,243,3,208,124,52,250,  
-    10,190,146,35,254,20,170,167,21,255,33,149,188,11,251,49,
-    128
-};
-
-
-
-char inChar;        // incoming serial char
-char myData[20];        // incoming string
-int cntChar = 0;        // current string position
-
-int expChar = 0;       // number of expected characters
+int expChar = 0;           // number of expected characters
 int posChar = 0;
 
 int bufIndex = 0;
-int freq = 1;          // fequency
+int freq = 1;              // fequency
 int timeBase = 1;
 // Triangle values
-uint16_t startT = 0;   // awg Triangle Start Value
-uint16_t stopT = 0;   // awg Triangle Stop Value
-uint16_t stepT = 0;   // awg Triangle Step Value
+uint16_t startT = 0;         // awg Triangle Start Value
+uint16_t stopT = 0;          // awg Triangle Stop Value
+uint16_t stepT = 0;          // awg Triangle Step Value
 unsigned long repeatT = 0;   // awg Triangle repeat Value
 // Sine values
-unsigned long stepS = 0;   // awg sine step Value
-unsigned long ampS = 0;   // awg sine amplitude Value
-unsigned long offS = 0;   // awg sine offset Value
+unsigned long stepS = 0;    // awg sine step Value
+unsigned long ampS = 0;     // awg sine amplitude Value
+unsigned long offS = 0;     // awg sine offset Value
 // Getting time base
 unsigned long timeBegin = micros();  // measure time base
-unsigned long timeEnd = micros();  // measure time base
-uint16_t cntBuf = 0;   // number of buffer readings
+unsigned long timeEnd   = micros();  // measure time base
+uint16_t cntBuf = 0;       // number of buffer readings
 
   uint16_t awgX = 0;   // waveform generator value
+  uint16_t awgY = 0;   // waveform generator value
+  uint16_t awgZ = 0;   // waveform generator value
   uint16_t cntV = 0;   // number of oscilloscope readings
-  uint16_t run = 1;   // number of oscilloscope readings
+  uint16_t runX = 1;    // number of oscilloscope readings
 
+    uint16_t bitsX[] = {1,2,4,8,16,32,64,128};
 
 static void ADCsync() {
   while (ADC->STATUS.bit.SYNCBUSY == 1);
@@ -183,7 +130,27 @@ void setup() {
  
  // initialize direct access
  adc_init(); 
-  
+
+  // ADC PMOD AD2
+  Wire.begin(); // initialization of I2C communication
+ Init_AD7991(); // initialisation du module Pmod AD2
+
+ // DAC PMOD DA2
+ SPI.begin(); // initialization of SPI port
+ SPI.setDataMode(SPI_MODE3); // configuration of SPI communication in mode 3
+ SPI.setClockDivider(SPI_CLOCK_DIV16); // configuration of clock at 1MHz
+ pinMode(CS, OUTPUT);
+
+   // put your setup code here, to run once:
+  pinMode(DAC_D0, OUTPUT);
+  pinMode(DAC_D1, OUTPUT);
+  pinMode(DAC_D2, OUTPUT);
+  pinMode(DAC_D3, OUTPUT);
+  pinMode(DAC_D4, OUTPUT);
+  pinMode(DAC_D5, OUTPUT);
+  pinMode(DAC_D6, OUTPUT);
+  pinMode(DAC_D7, OUTPUT);
+
 }
 
 
@@ -219,6 +186,7 @@ unsigned int hexToDec(String hexString) {
   return decValue;
 }
 
+
 // send all buffer values in Hex
 void sendData() {
   // get current time
@@ -240,7 +208,7 @@ void sendData() {
 }
 
 void readAnalogX(){
-    // read Analog in bufVal
+    // read Analog in bufVal and scale up to 16 Bit
   bufVal[bufIndex] = analogRead(ADC_OSC1);
   bufIndex++;
   bufVal[bufIndex] = analogRead(ADC_OSC2);
@@ -248,40 +216,103 @@ void readAnalogX(){
   bufVal[bufIndex] = analogRead(ADC_OSC3);
   bufIndex++;
   bufVal[bufIndex] = analogRead(ADC_OSC4);
+  bufVal[bufIndex] = readADC();  // PMOD AD2
   bufIndex++;
 
 }
 
-void readAnalogY(){
-  ADC->INPUTCTRL.bit.MUXPOS = g_APinDescription[ADC_OSC1].ulADCChannelNumber;
-  while (ADC->STATUS.bit.SYNCBUSY == 1);
-  bufVal[bufIndex] = ADC->RESULT.reg;
-  // bufVal[bufIndex] = analogRead(ADC_OSC1);
-  bufIndex++;
-  // Change channel
-  ADC->INPUTCTRL.bit.MUXPOS = g_APinDescription[ADC_OSC2].ulADCChannelNumber;
-  while (ADC->STATUS.bit.SYNCBUSY == 1);
-  bufVal[bufIndex] = ADC->RESULT.reg;
-  bufIndex++;
-  // Change channel
-  ADC->INPUTCTRL.bit.MUXPOS = g_APinDescription[ADC_OSC3].ulADCChannelNumber;
-  while (ADC->STATUS.bit.SYNCBUSY == 1);
-  bufVal[bufIndex] = ADC->RESULT.reg;
-  bufIndex++;
-  // Change channel
-  ADC->INPUTCTRL.bit.MUXPOS = g_APinDescription[ADC_OSC4].ulADCChannelNumber;
-  while (ADC->STATUS.bit.SYNCBUSY == 1);
-  bufVal[bufIndex] = ADC->RESULT.reg;
-  bufIndex++;
+// Initialisation du module Pmod AD2
+void Init_AD7991(void)
+{
+ Wire.beginTransmission(AD7991_Adresse);
+ Wire.write(0x08); // configuration of the I2C communication in HIGH SPEED Mode
+ Wire.write(0x10); // configuration of Pmod AD2 (read of V0)
+ Wire.endTransmission();
 }
+
+// Write PMOD DA2 via SPI
+void writeDAC(uint16_t sineValue){ // 0..32k 15 bit to 12 bit
+ int upper_value = (sineValue>>8)&0XFF;   // order high get 4 high bits order
+ int lower_value = (sineValue)&0XFF; // order low get 8 low bits order
+
+ digitalWrite(CS, LOW); // activation of the CS line
+ SPI.transfer(upper_value); // Send order
+ SPI.transfer(lower_value);
+ //delay(5);
+ digitalWrite(CS, HIGH); // deactivation of CS line
+}
+
+// Read PMOD AD2 via I2C
+int readADC(void){
+  // ADC Variables
+  int MSB;
+  int LSB;
+  int valeur;
+  Wire.beginTransmission(AD7991_Adresse); // Launch of the measure
+  Wire.endTransmission();
+  // delay(10);
+  Wire.requestFrom(AD7991_Adresse, 2); // Recovery of the two bytes MSB and LSB
+  if(Wire.available() <=2)
+  {
+    MSB = Wire.read();
+    LSB = Wire.read();
+  }
+  valeur = MSB<< 8 |LSB ;
+  return valeur;
+}
+
+void digWrite(uint16_t sineValue){
+  if ((sineValue & bitsX[0]) == bitsX[0] ) {
+    digitalWrite(DAC_D0, HIGH);
+  } else {
+    digitalWrite(DAC_D0, LOW);    
+  }
+  if ((sineValue & bitsX[1]) == bitsX[1] ) {
+    digitalWrite(DAC_D1, HIGH);
+  } else {
+    digitalWrite(DAC_D1, LOW);    
+  }
+  if ((sineValue & bitsX[2]) == bitsX[2] ) {
+    digitalWrite(DAC_D2, HIGH);
+  } else {
+    digitalWrite(DAC_D2, LOW);    
+  }
+  if ((sineValue & bitsX[3]) == bitsX[3] ) {
+    digitalWrite(DAC_D3, HIGH);
+  } else {
+    digitalWrite(DAC_D3, LOW);    
+  }
+  if ((sineValue & bitsX[4]) == bitsX[4] ) {
+    digitalWrite(DAC_D4, HIGH);
+  } else {
+    digitalWrite(DAC_D4, LOW);    
+  }
+  if ((sineValue & bitsX[5]) == bitsX[5] ) {
+    digitalWrite(DAC_D5, HIGH);
+  } else {
+    digitalWrite(DAC_D5, LOW);    
+  }
+  if ((sineValue & bitsX[6]) == bitsX[6] ) {
+    digitalWrite(DAC_D6, HIGH);
+  } else {
+    digitalWrite(DAC_D6, LOW);    
+  }
+  if ((sineValue & bitsX[7]) == bitsX[7] ) {
+    digitalWrite(DAC_D7, HIGH);
+  } else {
+    digitalWrite(DAC_D7, LOW);    
+  }
+  
+}
+
 
 int waitSend = 0;
+int awgMode = 0;
+int stepIndex = 0;
   
 void loop() {
-  // put your main code here, to run repeatedly:
-  // while (run == 1) {
-  // if we get a valid byte, read analog ins:
-  
+
+  // Serial Interface input
   if (Serial.available() > 0) {
     // get incoming byte:
     inChar = Serial.read();
@@ -294,38 +325,51 @@ void loop() {
         waitSend = 1;
       }
     } 
+    if (inChar == 'X') { expChar = 1; posChar = 0; } // cmd 'O' set block size
     if (inChar == 'O') { expChar = 9; posChar = 0; } // cmd 'O' set block size
     if (inChar == 'T') { expChar = 21; posChar = 0; } // cmd 'T' triangle
     if (inChar == 'S') { expChar = 25; posChar = 0; } // cmd 'S' sine
+    if (inChar == 'R') { expChar = 256; posChar = 0; } // cmd 'R' lookup table
     
     if (expChar > 0 ) {                              // gather command string
       myData[posChar] = inChar; // Add character
       posChar++;
+      myData[posChar] = 0;
       expChar--;
       // Serial.print(":"); Serial.print(expChar); Serial.print(","); Serial.print(posChar);
       // Serial.print(","); Serial.println(String(myData));
       if (expChar == 0) {
+        String myString(myData);     // make String
         if (myData[0] == 'O') {
-          String myString(myData);
-          String partString = myString.substring(1,5);
-          bufSize = hexToDec(partString) * 5 / 2; // half number of values
+          String partString = myString.substring(1,5); // 4 hex chars
+          bufSize = hexToDec(partString) * 5; //  0x0200 is 512 values * 5 channels each
           partString = myString.substring(5,9);
           timeBase = hexToDec(partString);
+          Serial.print("Omd: "); Serial.print(bufSize); Serial.print(",");Serial.println(timeBase);
         }
         if (myData[0] == 'T') {
-          String myString(myData);     // make String
           String partString = myString.substring(1,5);
           startT = hexToDec(partString);                // start Value
-          stopT = hexToDec(myString.substring(5,9));
-          stepT = hexToDec(myString.substring(10,14));
-          repeatT = hexToDec(myString.substring(15,19)) * 256 * 256 + hexToDec(myString.substring(20,24)) ;
+          stopT = hexToDec((String)myString.substring(5,9));
+          stepT = hexToDec((String)myString.substring(9,13));  
+          repeatT = hexToDec((String)myString.substring(13,17)) * 256 * 16  + hexToDec((String)myString.substring(17,20)) ;
+          if (repeatT == 0) { repeatT = 1; }
+          Serial.print("Tmd: "); Serial.print(startT); Serial.print(",");Serial.print(stopT); Serial.print(",");
+          Serial.print(stepT); Serial.print(","); Serial.println(repeatT);
+          awgMode = 1;
         }
         if (myData[0] == 'S') {
-          String myString(myData);     // make String
-          stepS = hexToDec(myString.substring(1,5)) * 256 * 256 + hexToDec(myString.substring(6,10)) ;
-          ampS = hexToDec(myString.substring(11,15)) * 256 * 256 + hexToDec(myString.substring(16,20)) ;
-          offS = hexToDec(myString.substring(21,25)) * 256 * 256 + hexToDec(myString.substring(26,30)) ;
+          stepS = hexToDec(myString.substring(2,6)); // 16 bit, 4 hex; from 32 bit value, 8 hex 
+          ampS = hexToDec(myString.substring(9,13))/8; // 12 bit, 3 hex; from 32 bit value, 8 hex    
+          offS = hexToDec(myString.substring(17,21))/8; // 12 bit, 3 hex; from 32 bit value, 8 hex 
+          Serial.print("Smd: "); Serial.print(stepS); Serial.print(",");Serial.print(ampS); Serial.print(",");
+          Serial.println(offS);
+          awgMode = 2;
         }
+        if (myData[0] == 'X') {
+          awgMode = 0;
+        }
+        Serial.println((String)myData);
         posChar = 0; expChar = 0;
         // Serial.print(bufSize);Serial.print(","); Serial.println(timeBase);
       }
@@ -336,18 +380,33 @@ void loop() {
     bufIndex = 0;          // start at index 0
     timeBegin = micros();  // start measuring time 
   }
-  // Generate Analog value
-  awgX = (int) ((4096 - 1)  * (1 + sin( TWO_PI * bufIndex / bufSize * freq)) / 2);
-  // awgX = 16 * sineWave[bufIndex + bufSize];
+  
+  // Generate Analog value sine
+     awgX = (int)(offS) + (int)(ampS) * sin( TWO_PI * stepIndex * stepS / 256 / 256); // 256 * 256 steps per cycle
+  // Generate Analog value Triangle
+     int deltaX = (stopT - startT);
+     int posY = ((int)(stepT) * ((stepIndex * 256 * 3 )/ repeatT) ) % ( deltaX * 2); 
+     if (posY > deltaX) posY = 2 * deltaX - posY;
+     awgY = (int)(startT) + posY; // 256 steps per cycle
   // writing Analog
   // if (awgX > 1024) { awgX = 100; }
   // else { awgX = 1200; }
-  analogWrite(DAC, awgX);
-  bufVal[bufIndex] = awgX; // write val in bufVal
-  bufIndex++;
+  if (awgMode == 0) { awgZ = 0;             // off
+  } else if (awgMode == 1) { awgZ = awgY;      // Triangle
+  } else if (awgMode == 2) { awgZ = awgX; }    // Sine
   
+  analogWrite(DAC, awgZ);          // Write internal 12-Bit DAC
+  
+  writeDAC(awgZ);                  // Write PMOD DA2
+  
+  digWrite(awgZ >> 4);                  // 8 Bit
+  
+  bufVal[bufIndex] = awgZ;         // write val in bufVal
+  bufIndex++;
+  stepIndex++;
+  stepIndex = stepIndex % 4096;
+
   readAnalogX();
-  // readAnalogY(); // multiplexing not working yet
   
   if (bufIndex >= bufSize) { bufIndex = 0; cntBuf++; } 
   cntV++;
