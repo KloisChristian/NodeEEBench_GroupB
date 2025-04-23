@@ -1,4 +1,4 @@
-<html lang="en">
+﻿<html lang="en">
   <head>
 <meta name="description" content="User interface of EEBench an open source, open access low cost
    oscilloscope and arbitrary waveform generator based on FPGA BASYS3 and nodejs JavaScript" />
@@ -642,9 +642,117 @@ separated values in the text input field.<br>
 <div id="tab9" class="tabX" style="display:none">
 <h2>Bodeplot</h2>
 </div>
+<!---------------------- Digital I/O --------------------------------------------------------->
 
 <div id="tab10" class="tabX" style="display:none">
-<h2>Digital I/O</h2>
+	<h2>Digital I/O</h2><br /><br />
+	<div id="cmd"></div>
+
+	<input type="submit" value="Send Data" onclick="dIO();"></input><br>
+
+	<div class="bo">
+		Digital Port 1:
+		<select id="dig_port_1_dir">
+			<option value="1">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_1_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="1">High / Pull-Up On</option>
+		</select>
+	</div>
+	<br>
+
+	<div class="bo">
+		Digital Port 2:
+		<select id="dig_port_2_dir">
+			<option value="2">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_2_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="2">High / Pull-Up On</option>
+		</select>
+	</div>
+	<br>
+
+	<div class="bo">
+		Digital Port 3:
+		<select id="dig_port_3_dir">
+			<option value="4">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_3_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="4">High / Pull-Up On</option>
+		</select>
+	</div>
+	<br>
+
+	<div class="bo">
+		Digital Port 4:
+		<select id="dig_port_4_dir">
+			<option value="8">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_4_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="8">High / Pull-Up On</option>
+		</select>
+	</div>
+	<br>
+
+	<div class="bo">
+		Digital Port 5:
+		<select id="dig_port_5_dir">
+			<option value="16">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_5_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="16">High / Pull-Up On</option>
+		</select>
+	</div><br>
+
+	<div class="bo">
+		Digital Port 6:
+		<select id="dig_port_6_dir">
+			<option value="32">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_6_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="32">High / Pull-Up On</option>
+		</select>
+	</div><br>
+
+	<div class="bo">
+		Digital Port 7:
+		<select id="dig_port_7_dir">
+			<option value="64">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_7_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="64">High / Pull-Up On</option>
+		</select>
+	</div><br>
+
+	<div class="bo">
+		Digital Port 8:
+		<select id="dig_port_8_dir">
+			<option value="128">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_8_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="128">High / Pull-Up On</option>
+		</select>
+	</div>
+
+
+
+
 </div>
 
 <div id="tab11" class="tabX" style="display:none">
@@ -765,6 +873,38 @@ function runOsc() {
 	 sendCmd();
 	 busyOsc = 1;  // new data going on
    }	
+}
+
+	function dIO() {
+        let d1_d = parseInt(document.getElementById("dig_port_1_dir").value);
+        let d2_d = parseInt(document.getElementById("dig_port_2_dir").value);
+        let d3_d = parseInt(document.getElementById("dig_port_3_dir").value);
+        let d4_d = parseInt(document.getElementById("dig_port_4_dir").value);
+		let d5_d = parseInt(document.getElementById("dig_port_5_dir").value);
+		let d6_d = parseInt(document.getElementById("dig_port_6_dir").value);
+		let d7_d = parseInt(document.getElementById("dig_port_7_dir").value);
+        let d8_d = parseInt(document.getElementById("dig_port_8_dir").value);
+
+        let d1_l = parseInt(document.getElementById("dig_port_1_param").value);
+        let d2_l = parseInt(document.getElementById("dig_port_2_param").value);
+        let d3_l = parseInt(document.getElementById("dig_port_3_param").value);
+        let d4_l = parseInt(document.getElementById("dig_port_4_param").value);
+		let d5_l = parseInt(document.getElementById("dig_port_5_param").value);
+        let d6_l = parseInt(document.getElementById("dig_port_6_param").value);
+        let d7_l = parseInt(document.getElementById("dig_port_7_param").value);
+        let d8_l = parseInt(document.getElementById("dig_port_8_param").value);
+
+        
+        let portMode = d1_d + d2_d + d3_d + d4_d + d5_d + d6_d + d7_d + d8_d;
+		let portLevel = d1_l + d2_l + d3_l + d4_l + d5_l + d6_l + d7_l + d8_l;
+
+
+		cmdText = "I" + decToHex(portMode, 2) + decToHex(portLevel, 2);
+		document.getElementById("cmd").innerHTML = cmdText;
+
+		sendCmd();
+
+
 }
 
 function oOp(cmd) {  // oscilloscope reading
