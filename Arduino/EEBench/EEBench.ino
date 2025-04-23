@@ -227,11 +227,13 @@ void readAnalogX(){
   bufIndex++;
   bufVal[bufIndex] = analogRead(ADC_OSC2);
   bufIndex++;
+  /*
   bufVal[bufIndex] = analogRead(ADC_OSC3);
   bufIndex++;
   bufVal[bufIndex] = analogRead(ADC_OSC4);
   bufVal[bufIndex] = readADC();  // PMOD AD2
   bufIndex++;
+  */
 
 }
 
@@ -242,6 +244,7 @@ void readDigitalX(){
   bufIndex++;
   bufVal[bufIndex] = digitalRead(DAC_D1);
   bufIndex++;
+  
 }
 
 // Initialisation du module Pmod AD2

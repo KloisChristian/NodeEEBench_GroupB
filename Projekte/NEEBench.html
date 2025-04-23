@@ -660,6 +660,7 @@ separated values in the text input field.<br>
 			<option value="0">Low / Pull-Up Off</option>
 			<option value="1">High / Pull-Up On</option>
 		</select>
+		<span id="status1">Unknown</span>
 	</div>
 	<br>
 
@@ -2819,7 +2820,8 @@ var fullDataT = "";
 				   if (trg == 1) {
 				       val1 = dataOSC1[i + dataMax * trg] * factor * 3.3 + offset; 
 				       val2 = dataOSC1[i - 1 + dataMax * trg] * factor * 3.3 + offset; 
-				   }
+					 }
+				   
 				   if  (trgEdge == 1) {       // rising
 				      if ((val1 > val2) && (val1 >= trgLevel) && (trgLevel >= val2)) trgPos = i;
                    } else if (trgEdge == 2) { // falling
@@ -2852,7 +2854,8 @@ var fullDataT = "";
 				 var factorX = [3.3, 1.0, 1.0, 1.0, 1.0]; // FPGA Range
 				 // if (currUnit == 0) { timestep = 1} 
                  if (boardX == 2) { // Arduino
-                   factorX = [3.3, 1.0, 1.0, 1.0, 3.3];  // Arduino range with PMOD AD2
+					 //factorX = [3.3, 1.0, 1.0, 1.0, 3.3];  // Arduino range with PMOD AD2
+                     factorX = [3.3, 1.0, 1.0, 4095, 4095];  // With DIgital IO Arduino range with PMOD AD2
 				 }
 				 for (var i=0; i<factorX.length; i++) {
 				    factorX[i] = factorX[i] * factor; 
@@ -2866,9 +2869,17 @@ var fullDataT = "";
 			        dataOSC2[i + 2 * dataMax2] = dataOSC1[ i + trgPos + 2 * (dataMax - 2)] * factorX[1] + offset;
 			        dataOSC3[i + 3 * dataMax2] = dataOSC1[ i + trgPos + 3 * (dataMax - 2)];
 			        dataOSC2[i + 3 * dataMax2] = dataOSC1[ i + trgPos + 3 * (dataMax - 2)] * factorX[2] + offset;
-			        dataOSC3[i + 4 * dataMax2] = dataOSC1[ i + trgPos + 4 * (dataMax - 2)];
+					dataOSC3[i + 4 * dataMax2] = dataOSC1[i + trgPos + 4 * (dataMax - 2)];
+					//hier dataOsc3 ist raw von Channel 3
+					 if (dataOSC3[i + 4 * dataMax2] == 1) {
+						 document.getElementById("status1").textContent = "High";
+					 }
+					 else {
+						 document.getElementById("status1").textContent = "Low";
+					 }
 			        dataOSC2[i + 4 * dataMax2] = dataOSC1[ i + trgPos + 4 * (dataMax - 2)] * factorX[3] + offset;
-			        dataOSC3[i + 5 * dataMax2] = dataOSC1[ i + trgPos + 5 * (dataMax - 2)];
+					dataOSC3[i + 5 * dataMax2] = dataOSC1[i + trgPos + 5 * (dataMax - 2)];
+					//hier dataOsc3 ist raw von Channel 3	
 			        dataOSC2[i + 5 * dataMax2] = dataOSC1[ i + trgPos + 5 * (dataMax - 2)] * factorX[4] + offset;
 				 }
 				 // ready to plot
