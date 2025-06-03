@@ -822,7 +822,7 @@ function scatterTable(tableId,tableName,x,nr)
         if (bf<xmin) { xmin = bf;}
         if (Math.abs(bf)<xsmall) { xsmall = Math.abs(bf);}
 	    for (var j = 1; j < Math.round(x.length/nr); j++) { // all curves?
-		  if (channels[j].selected == "1") { 
+			if (channels[j].selected == "1" && (j == 1 || j == 2 || j == 3 || j == 4)) { 
 	        var af = parseFloat(x[j*nr+i]);
 		    if (af > ymax) { ymax = af;}
             if (af < ymin) { ymin = af;}
@@ -899,7 +899,7 @@ function scatterTable(tableId,tableName,x,nr)
 	}
 	for (var j = 1; j < Math.round(x.length/nr); j++) {
       //alert(j + "," + channels[j].selected + "," + channels[j].factor + "," + channels[j].offScale); 
-	  if (channels[j].selected == "1") { 
+		if (channels[j].selected == "1" && (j == 1 || j == 2 || j == 3 || j == 4)) { 
 	    if (ylinlog == "linO") {
 		  scaley_fk = channels[j].factor;
 		  scaley_of = channels[j].offScale;
@@ -1020,7 +1020,971 @@ function scatterTable(tableId,tableName,x,nr)
     // chart_context.rect(xll,yll-yb,xur-xll,yb); // above graph x axis top
     // chart_context.stroke();
 	 }
-	 
+
+function ScatterPlotA(Chartid, Chartname, x, nr, xaxisname, xlinlog, xscaling, yaxisname, ylinlog, yscaling, grido,
+	xAxisIndex, activeIndex, channels) {      //         blue    green  red  pink dgreen dviolett yellow lblue    
+	var colorstr = ['#0000ff', '#00a000', '#ff0000', '#ff00ff', '#007070', '#700070', '#ffff00', '#00ffff']
+	var colorstr = ['#FF8C00', '#0000FF', '#FF1493', '#008000', '#FF4500', '#4682B4', '#DC143C', '#ABABAB']
+	var canv_obj = document.getElementById(Chartid);
+	var xy;
+	var xmin, xmax, ymin, ymax, ysmall, xsmall, Deltax, Deltay, SDeltax, SDeltay;
+	currColorIndex = 0;
+	Chart_name = Chartname;
+	if (!canv_obj) {
+		canv_obj = Chartid;
+		// alert('Error: I cannot find the canvas element!');
+		// return;
+	}
+	if (!canv_obj.getContext) {
+		alert('Error: no canvas.getContext!');
+		return;
+	}
+	// Get the 2D canvas context.
+	chart_context = canv_obj.getContext('2d');
+	if (!chart_context) {
+		alert('Error: failed to getContext!');
+		return;
+	}
+	chart_context.clearRect(0, 0, canv_obj.width, canv_obj.height);
+	// 20% are for labels
+	xll = 0.18 * canv_obj.width;
+	xur = (0.18 + perSizeX) * canv_obj.width;
+	yll = 0.1 * canv_obj.height;
+	yur = (0.1 + perSizeY) * canv_obj.height;
+	chart_context.beginPath();
+	chart_context.strokeStyle = "#000000"; // black
+	chart_context.rect(xll, yll, canv_obj.width * perSizeX, canv_obj.height * perSizeY);
+	chart_context.stroke();
+
+	// Find min and max (optional)
+	xmin = parseFloat(x[0]); xmax = parseFloat(x[0]);
+	if (Math.abs(x[0]) != 0) { xsmall = Math.abs(x[0]); } else { xsmall = 1; }
+	ymin = parseFloat(x[nr]); ymax = parseFloat(x[nr]);
+	if (Math.abs(x[nr]) != 0) { ysmall = Math.abs(x[nr]); } else { ysmall = 1; }
+	for (var i = 0; i < nr; i++) {
+		var bf = parseFloat(x[i]);
+		if (bf > xmax) { xmax = bf; }
+		if (bf < xmin) { xmin = bf; }
+		if (Math.abs(bf) < xsmall) { xsmall = Math.abs(bf); }
+		for (var j = 1; j < Math.round(x.length / nr); j++) { // all curves?
+			if (channels[j].selected == "1" && (j == 5)) {
+				var af = parseFloat(x[j * nr + i]);
+				if (af > ymax) { ymax = af; }
+				if (af < ymin) { ymin = af; }
+				if (Math.abs(af) < ysmall) { ysmall = Math.abs(af); }
+			}
+		}
+	}
+	// alert(x.length+" "+nr+" "+xmin+" "+xmax+" "+ymin+" "+ymax);
+	// Resize min,max for axis grid, x -axis could be other index
+
+	if ((xlinlog == "lin") || (xlinlog == "linO")) {
+		chartO.xstyp = 0;
+		if (xlinlog == "linO") {
+			xmax = - channels[xAxisIndex].offset + channels[xAxisIndex].range * 5;
+			xmin = - channels[xAxisIndex].offset - channels[xAxisIndex].range * 5;
+			// grid and fine grid
+			Deltax = channels[xAxisIndex].range; SDeltax = channels[xAxisIndex].range / 10;
+		} else {
+			scale_lin_max_min(xmax, xmin, xscaling);
+			// Set scaling and offset
+			xmax = oMax; xmin = oMin;
+			Deltax = Norm_Delta; SDeltax = Small_Delta;
+		}
+		scalex_fk = canv_obj.width * perSizeX / (xmax - xmin);
+		scalex_of = xll - xmin * scalex_fk;
+		channels[xAxisIndex].factor = scalex_fk;
+		channels[xAxisIndex].offScale = scalex_of;
+	} else {  // not changed hopefully is ok
+		chartO.xstyp = 1;
+		scale_log_max_min(xmax, xsmall, xscaling);
+		xmax = oMax; xmin = oMin;
+		Deltax = Norm_Delta; SDeltax = Small_Delta;
+		scalex_fk = canv_obj.width * perSizeX / (Math.log(Math.abs(xmax)) / Math.log(10) - Math.log(Math.abs(xmin)) / Math.log(10));
+		scalex_of = xll - Math.log(Math.abs(xmin)) / Math.log(10) * scalex_fk;
+	}
+	// alert(xmax + "," + xmin + "," + perSizeX + "," + xAxisIndex´+ "," + Deltax);
+	if ((ylinlog == "lin") || (ylinlog == "linO")) {
+		chartO.ystyp = 0;
+
+		// Feste Skalierung für digitale Signale: 0 bis 1
+		ymin = 0;
+		ymax = 1;
+		Deltay = 1;
+		SDeltay = 1;
+
+		scaley_fk = canv_obj.height * perSizeY / (ymax - ymin);
+		scaley_of = yur + ymin * scaley_fk;
+
+		for (var kk = 0; kk < channels.length; kk++) {
+			if (kk != xAxisIndex) {
+				channels[kk].factor = scaley_fk;
+				channels[kk].offScale = scaley_of;
+			}
+		}
+	} else { // logarithmische Skalierung bleibt unverändert
+		chartO.ystyp = 1;
+		scale_log_max_min(ymax, ysmall, yscaling);
+		ymax = oMax; ymin = oMin;
+		Deltay = Norm_Delta; SDeltay = Small_Delta;
+		scaley_fk = canv_obj.height * perSizeY / (Math.log(Math.abs(ymax)) / Math.log(10) - Math.log(Math.abs(ymin)) / Math.log(10));
+		scaley_of = yur + Math.log(Math.abs(ymin)) / Math.log(10) * scaley_fk;
+	}
+
+	channels[0].factor = scalex_fk;
+	channels[0].offScale = scalex_of;
+
+	// Zeichenroutine
+	chart_context.lineWidth = 2;
+	if (xlinlog == "linO") {
+		scalex_fk = channels[xAxisIndex].factor;
+		scalex_of = channels[xAxisIndex].offScale;
+	}
+
+	for (var j = 1; j < Math.round(x.length / nr); j++) {
+		if (channels[j].selected == "1" && (j == 5 )) {
+			if (ylinlog == "linO") {
+				scaley_fk = channels[j].factor;
+				scaley_of = channels[j].offScale;
+			}
+			chart_context.strokeStyle = colorstr[(j - 1) % colorstr.length];
+			Draw_Marker(scalexg(x[0 + xAxisIndex * nr]), scaleyg(x[0 + j * nr]), 4, j, chart_context);
+
+			for (var i = 1; i < nr; i++) {
+				chart_context.beginPath();
+				chart_context.moveTo(scalexg(x[i - 1 + xAxisIndex * nr]), scaleyg(x[i - 1 + j * nr]));
+				chart_context.lineTo(scalexg(x[i + xAxisIndex * nr]), scaleyg(x[i + j * nr]));
+				chart_context.stroke();
+				Draw_Marker(scalexg(x[i + xAxisIndex * nr]), scaleyg(x[i + j * nr]), 4, j, chart_context);
+			}
+		}
+		currColorIndex = (Math.round(x.length / nr) - 2) % colorstr.length;
+	}
+
+	// Achsenbeschriftung
+	chart_context.lineWidth = 1;
+	chart_context.fillStyle = (xAxisIndex == 0) ? "#000000" : colorstr[xAxisIndex - 1];
+
+	if ((xlinlog == "lin") || (xlinlog == "linO")) {
+		if (xlinlog == "linO") {
+			scalex_fk = channels[xAxisIndex].factor;
+			scalex_of = channels[xAxisIndex].offScale;
+			Deltax = channels[xAxisIndex].range; SDeltax = Deltax / 10;
+			xlinlog = "lin";
+		}
+	}
+
+	Label_X_Axis(xmin, xmax, Deltax, SDeltax, chart_context, canv_obj, xlinlog, grido);
+
+	// y-Achsenbeschriftung für digitale Signale
+	chart_context.fillStyle = colorstr[activeIndex - 1];
+
+	if (ylinlog == "linO") {
+		// Fest auf 0 und 1 setzen
+		ymin = 0;
+		ymax = 1;
+		scaley_fk = channels[activeIndex].factor;
+		scaley_of = channels[activeIndex].offScale;
+		Deltay = 1;
+		SDeltay = 1;
+		ylinlog = "lin";
+	}
+
+	Label_Y_Axis(ymin, ymax, Deltay, SDeltay, chart_context, canv_obj, ylinlog, grido);
+	chart_context.fillStyle = "#000000";
+	// draw text
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'middle';
+	chart_context.textAlign = 'center';
+	chart_context.fillText(Chartname, canv_obj.width / 2, canv_obj.height * 0.05);
+
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'top';
+	chart_context.textAlign = 'center';
+	chart_context.fillText(xaxisname, canv_obj.width / 2, canv_obj.height * 0.95);
+
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'middle';
+	chart_context.textAlign = 'center';
+	//	  chart_context.fillText  (yaxisname ,canv_obj.width*0.05, canv_obj.height*0.5);
+	chart_context.save();
+	chart_context.rotate(Math.PI * 1.5);
+	chart_context.fillText(yaxisname, -canv_obj.height * 0.5, canv_obj.width * 0.02);
+	//	  chart_context.fillText  ("here" ,-50,100);
+	chart_context.restore();
+
+	//--------------------------------------------------------------------------
+	// Legende
+	// alert(legend.length+","+Math.round(x.length/nr));
+	if (legend.length > 0) { // == (Math.round(x.length/nr)-1)
+		// alert("legende");
+		var tMaxLen = legend[0].length;
+		for (var j = 1; j < Math.round(x.length / nr); j++) {
+			if (tMaxLen < legend[j - 1].length) tMaxLen = legend[j - 1].length;
+		}
+		var px = legendPos.px;  // Position Top right
+		var py = legendPos.py;   // 0.6 center
+		chart_context.fillStyle = "#FFFFFF";     // Fill regionbackground white
+		chart_context.fillRect(canv_obj.width * (0.1 + perSizeX + px), canv_obj.height * py,
+			canv_obj.width * (tMaxLen + 2) * 0.02, canv_obj.height * Math.round(x.length / nr) * 0.05)
+		chart_context.fillStyle = "#000000";     // Fill region
+		// alert("hello");  
+		for (var j = 1; j < Math.round(x.length / nr); j++) {
+			chart_context.strokeStyle = colorstr[(j - 1) % colorstr.length]; // red
+			Draw_Marker(canv_obj.width * (0.12 + perSizeX + px), canv_obj.height * (py + j * 0.05), 4, j, chart_context);
+			chart_context.textBaseline = 'middle';
+			chart_context.textAlign = 'left';
+			chart_context.fillText(legend[j - 1], canv_obj.width * (0.15 + px + perSizeX), canv_obj.height * (py + j * 0.05));
+		}
+	}
+	// show areas    
+	// chart_context.clearRect(0,0,canv_obj.width,canv_obj.height);
+	// 20% are for labels
+	// xll=0.18*canv_obj.width;
+	// xur= (0.18+perSizeX)*canv_obj.width;
+	// yll=0.1*canv_obj.height;
+	// yur=(0.1+perSizeY)*canv_obj.height;
+	chart_context.strokeStyle = "#99ff33"; // light green
+	var xb = canv_obj.width * 0.05;
+	var yb = canv_obj.height * 0.05;
+	// chart_context.beginPath();
+	// chart_context.rect(xll - xb,yll,xb,canv_obj.height*perSizeY); //left side
+	// chart_context.stroke();
+	// chart_context.beginPath();
+	// chart_context.rect(xll,yur,xur-xll,yb); // under x axis bottom
+	// chart_context.stroke();
+	// chart_context.strokeStyle = "#ff80df"; // light pink for cursors
+	// chart_context.beginPath();
+	// chart_context.rect(xur,yll,xb,canv_obj.height*perSizeY); // right side
+	// chart_context.stroke();
+	// chart_context.beginPath();
+	// chart_context.rect(xll,yll-yb,xur-xll,yb); // above graph x axis top
+	// chart_context.stroke();
+}
+
+function ScatterPlotB(Chartid, Chartname, x, nr, xaxisname, xlinlog, xscaling, yaxisname, ylinlog, yscaling, grido,
+	xAxisIndex, activeIndex, channels) {      //         blue    green  red  pink dgreen dviolett yellow lblue    
+	var colorstr = ['#0000ff', '#00a000', '#ff0000', '#ff00ff', '#007070', '#700070', '#ffff00', '#00ffff']
+	var colorstr = ['#FF8C00', '#0000FF', '#FF1493', '#008000', '#FF4500', '#4682B4', '#DC143C', '#ABABAB']
+	var canv_obj = document.getElementById(Chartid);
+	var xy;
+	var xmin, xmax, ymin, ymax, ysmall, xsmall, Deltax, Deltay, SDeltax, SDeltay;
+	currColorIndex = 0;
+	Chart_name = Chartname;
+	if (!canv_obj) {
+		canv_obj = Chartid;
+		// alert('Error: I cannot find the canvas element!');
+		// return;
+	}
+	if (!canv_obj.getContext) {
+		alert('Error: no canvas.getContext!');
+		return;
+	}
+	// Get the 2D canvas context.
+	chart_context = canv_obj.getContext('2d');
+	if (!chart_context) {
+		alert('Error: failed to getContext!');
+		return;
+	}
+	chart_context.clearRect(0, 0, canv_obj.width, canv_obj.height);
+	// 20% are for labels
+	xll = 0.18 * canv_obj.width;
+	xur = (0.18 + perSizeX) * canv_obj.width;
+	yll = 0.1 * canv_obj.height;
+	yur = (0.1 + perSizeY) * canv_obj.height;
+	chart_context.beginPath();
+	chart_context.strokeStyle = "#000000"; // black
+	chart_context.rect(xll, yll, canv_obj.width * perSizeX, canv_obj.height * perSizeY);
+	chart_context.stroke();
+
+	// Find min and max (optional)
+	xmin = parseFloat(x[0]); xmax = parseFloat(x[0]);
+	if (Math.abs(x[0]) != 0) { xsmall = Math.abs(x[0]); } else { xsmall = 1; }
+	ymin = parseFloat(x[nr]); ymax = parseFloat(x[nr]);
+	if (Math.abs(x[nr]) != 0) { ysmall = Math.abs(x[nr]); } else { ysmall = 1; }
+	for (var i = 0; i < nr; i++) {
+		var bf = parseFloat(x[i]);
+		if (bf > xmax) { xmax = bf; }
+		if (bf < xmin) { xmin = bf; }
+		if (Math.abs(bf) < xsmall) { xsmall = Math.abs(bf); }
+		for (var j = 1; j < Math.round(x.length / nr); j++) { // all curves?
+			if (channels[j].selected == "1" && (j == 6 )) {
+				var af = parseFloat(x[j * nr + i]);
+				if (af > ymax) { ymax = af; }
+				if (af < ymin) { ymin = af; }
+				if (Math.abs(af) < ysmall) { ysmall = Math.abs(af); }
+			}
+		}
+	}
+	// alert(x.length+" "+nr+" "+xmin+" "+xmax+" "+ymin+" "+ymax);
+	// Resize min,max for axis grid, x -axis could be other index
+
+	if ((xlinlog == "lin") || (xlinlog == "linO")) {
+		chartO.xstyp = 0;
+		if (xlinlog == "linO") {
+			xmax = - channels[xAxisIndex].offset + channels[xAxisIndex].range * 5;
+			xmin = - channels[xAxisIndex].offset - channels[xAxisIndex].range * 5;
+			// grid and fine grid
+			Deltax = channels[xAxisIndex].range; SDeltax = channels[xAxisIndex].range / 10;
+		} else {
+			scale_lin_max_min(xmax, xmin, xscaling);
+			// Set scaling and offset
+			xmax = oMax; xmin = oMin;
+			Deltax = Norm_Delta; SDeltax = Small_Delta;
+		}
+		scalex_fk = canv_obj.width * perSizeX / (xmax - xmin);
+		scalex_of = xll - xmin * scalex_fk;
+		channels[xAxisIndex].factor = scalex_fk;
+		channels[xAxisIndex].offScale = scalex_of;
+	} else {  // not changed hopefully is ok
+		chartO.xstyp = 1;
+		scale_log_max_min(xmax, xsmall, xscaling);
+		xmax = oMax; xmin = oMin;
+		Deltax = Norm_Delta; SDeltax = Small_Delta;
+		scalex_fk = canv_obj.width * perSizeX / (Math.log(Math.abs(xmax)) / Math.log(10) - Math.log(Math.abs(xmin)) / Math.log(10));
+		scalex_of = xll - Math.log(Math.abs(xmin)) / Math.log(10) * scalex_fk;
+	}
+	// alert(xmax + "," + xmin + "," + perSizeX + "," + xAxisIndex´+ "," + Deltax);
+	if ((ylinlog == "lin") || (ylinlog == "linO")) {
+		chartO.ystyp = 0;
+
+		// Feste Skalierung für digitale Signale: 0 bis 1
+		ymin = 0;
+		ymax = 1;
+		Deltay = 1;
+		SDeltay = 1;
+
+		scaley_fk = canv_obj.height * perSizeY / (ymax - ymin);
+		scaley_of = yur + ymin * scaley_fk;
+
+		for (var kk = 0; kk < channels.length; kk++) {
+			if (kk != xAxisIndex) {
+				channels[kk].factor = scaley_fk;
+				channels[kk].offScale = scaley_of;
+			}
+		}
+	} else { // logarithmische Skalierung bleibt unverändert
+		chartO.ystyp = 1;
+		scale_log_max_min(ymax, ysmall, yscaling);
+		ymax = oMax; ymin = oMin;
+		Deltay = Norm_Delta; SDeltay = Small_Delta;
+		scaley_fk = canv_obj.height * perSizeY / (Math.log(Math.abs(ymax)) / Math.log(10) - Math.log(Math.abs(ymin)) / Math.log(10));
+		scaley_of = yur + Math.log(Math.abs(ymin)) / Math.log(10) * scaley_fk;
+	}
+
+	channels[0].factor = scalex_fk;
+	channels[0].offScale = scalex_of;
+
+	// Zeichenroutine
+	chart_context.lineWidth = 2;
+	if (xlinlog == "linO") {
+		scalex_fk = channels[xAxisIndex].factor;
+		scalex_of = channels[xAxisIndex].offScale;
+	}
+
+	for (var j = 1; j < Math.round(x.length / nr); j++) {
+		if (channels[j].selected == "1" && (j == 6)) {
+			if (ylinlog == "linO") {
+				scaley_fk = channels[j].factor;
+				scaley_of = channels[j].offScale;
+			}
+			chart_context.strokeStyle = colorstr[(j - 1) % colorstr.length];
+			Draw_Marker(scalexg(x[0 + xAxisIndex * nr]), scaleyg(x[0 + j * nr]), 4, j, chart_context);
+
+			for (var i = 1; i < nr; i++) {
+				chart_context.beginPath();
+				chart_context.moveTo(scalexg(x[i - 1 + xAxisIndex * nr]), scaleyg(x[i - 1 + j * nr]));
+				chart_context.lineTo(scalexg(x[i + xAxisIndex * nr]), scaleyg(x[i + j * nr]));
+				chart_context.stroke();
+				Draw_Marker(scalexg(x[i + xAxisIndex * nr]), scaleyg(x[i + j * nr]), 4, j, chart_context);
+			}
+		}
+		currColorIndex = (Math.round(x.length / nr) - 2) % colorstr.length;
+	}
+
+	// Achsenbeschriftung
+	chart_context.lineWidth = 1;
+	chart_context.fillStyle = (xAxisIndex == 0) ? "#000000" : colorstr[xAxisIndex - 1];
+
+	if ((xlinlog == "lin") || (xlinlog == "linO")) {
+		if (xlinlog == "linO") {
+			scalex_fk = channels[xAxisIndex].factor;
+			scalex_of = channels[xAxisIndex].offScale;
+			Deltax = channels[xAxisIndex].range; SDeltax = Deltax / 10;
+			xlinlog = "lin";
+		}
+	}
+
+	Label_X_Axis(xmin, xmax, Deltax, SDeltax, chart_context, canv_obj, xlinlog, grido);
+
+	// y-Achsenbeschriftung für digitale Signale
+	chart_context.fillStyle = colorstr[activeIndex - 1];
+
+	if (ylinlog == "linO") {
+		// Fest auf 0 und 1 setzen
+		ymin = 0;
+		ymax = 1;
+		scaley_fk = channels[activeIndex].factor;
+		scaley_of = channels[activeIndex].offScale;
+		Deltay = 1;
+		SDeltay = 1;
+		ylinlog = "lin";
+	}
+
+	Label_Y_Axis(ymin, ymax, Deltay, SDeltay, chart_context, canv_obj, ylinlog, grido);
+	chart_context.fillStyle = "#000000";
+	// draw text
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'middle';
+	chart_context.textAlign = 'center';
+	chart_context.fillText(Chartname, canv_obj.width / 2, canv_obj.height * 0.05);
+
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'top';
+	chart_context.textAlign = 'center';
+	chart_context.fillText(xaxisname, canv_obj.width / 2, canv_obj.height * 0.95);
+
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'middle';
+	chart_context.textAlign = 'center';
+	//	  chart_context.fillText  (yaxisname ,canv_obj.width*0.05, canv_obj.height*0.5);
+	chart_context.save();
+	chart_context.rotate(Math.PI * 1.5);
+	chart_context.fillText(yaxisname, -canv_obj.height * 0.5, canv_obj.width * 0.02);
+	//	  chart_context.fillText  ("here" ,-50,100);
+	chart_context.restore();
+
+	//--------------------------------------------------------------------------
+	// Legende
+	// alert(legend.length+","+Math.round(x.length/nr));
+	if (legend.length > 0) { // == (Math.round(x.length/nr)-1)
+		// alert("legende");
+		var tMaxLen = legend[0].length;
+		for (var j = 1; j < Math.round(x.length / nr); j++) {
+			if (tMaxLen < legend[j - 1].length) tMaxLen = legend[j - 1].length;
+		}
+		var px = legendPos.px;  // Position Top right
+		var py = legendPos.py;   // 0.6 center
+		chart_context.fillStyle = "#FFFFFF";     // Fill regionbackground white
+		chart_context.fillRect(canv_obj.width * (0.1 + perSizeX + px), canv_obj.height * py,
+			canv_obj.width * (tMaxLen + 2) * 0.02, canv_obj.height * Math.round(x.length / nr) * 0.05)
+		chart_context.fillStyle = "#000000";     // Fill region
+		// alert("hello");  
+		for (var j = 1; j < Math.round(x.length / nr); j++) {
+			chart_context.strokeStyle = colorstr[(j - 1) % colorstr.length]; // red
+			Draw_Marker(canv_obj.width * (0.12 + perSizeX + px), canv_obj.height * (py + j * 0.05), 4, j, chart_context);
+			chart_context.textBaseline = 'middle';
+			chart_context.textAlign = 'left';
+			chart_context.fillText(legend[j - 1], canv_obj.width * (0.15 + px + perSizeX), canv_obj.height * (py + j * 0.05));
+		}
+	}
+	// show areas    
+	// chart_context.clearRect(0,0,canv_obj.width,canv_obj.height);
+	// 20% are for labels
+	// xll=0.18*canv_obj.width;
+	// xur= (0.18+perSizeX)*canv_obj.width;
+	// yll=0.1*canv_obj.height;
+	// yur=(0.1+perSizeY)*canv_obj.height;
+	chart_context.strokeStyle = "#99ff33"; // light green
+	var xb = canv_obj.width * 0.05;
+	var yb = canv_obj.height * 0.05;
+	// chart_context.beginPath();
+	// chart_context.rect(xll - xb,yll,xb,canv_obj.height*perSizeY); //left side
+	// chart_context.stroke();
+	// chart_context.beginPath();
+	// chart_context.rect(xll,yur,xur-xll,yb); // under x axis bottom
+	// chart_context.stroke();
+	// chart_context.strokeStyle = "#ff80df"; // light pink for cursors
+	// chart_context.beginPath();
+	// chart_context.rect(xur,yll,xb,canv_obj.height*perSizeY); // right side
+	// chart_context.stroke();
+	// chart_context.beginPath();
+	// chart_context.rect(xll,yll-yb,xur-xll,yb); // above graph x axis top
+	// chart_context.stroke();
+}
+
+function ScatterPlotC(Chartid, Chartname, x, nr, xaxisname, xlinlog, xscaling, yaxisname, ylinlog, yscaling, grido,
+	xAxisIndex, activeIndex, channels) {      //         blue    green  red  pink dgreen dviolett yellow lblue    
+	var colorstr = ['#0000ff', '#00a000', '#ff0000', '#ff00ff', '#007070', '#700070', '#ffff00', '#00ffff']
+	var colorstr = ['#FF8C00', '#0000FF', '#FF1493', '#008000', '#FF4500', '#4682B4', '#DC143C', '#ABABAB']
+	var canv_obj = document.getElementById(Chartid);
+	var xy;
+	var xmin, xmax, ymin, ymax, ysmall, xsmall, Deltax, Deltay, SDeltax, SDeltay;
+	currColorIndex = 0;
+	Chart_name = Chartname;
+	if (!canv_obj) {
+		canv_obj = Chartid;
+		// alert('Error: I cannot find the canvas element!');
+		// return;
+	}
+	if (!canv_obj.getContext) {
+		alert('Error: no canvas.getContext!');
+		return;
+	}
+	// Get the 2D canvas context.
+	chart_context = canv_obj.getContext('2d');
+	if (!chart_context) {
+		alert('Error: failed to getContext!');
+		return;
+	}
+	chart_context.clearRect(0, 0, canv_obj.width, canv_obj.height);
+	// 20% are for labels
+	xll = 0.18 * canv_obj.width;
+	xur = (0.18 + perSizeX) * canv_obj.width;
+	yll = 0.1 * canv_obj.height;
+	yur = (0.1 + perSizeY) * canv_obj.height;
+	chart_context.beginPath();
+	chart_context.strokeStyle = "#000000"; // black
+	chart_context.rect(xll, yll, canv_obj.width * perSizeX, canv_obj.height * perSizeY);
+	chart_context.stroke();
+
+	// Find min and max (optional)
+	xmin = parseFloat(x[0]); xmax = parseFloat(x[0]);
+	if (Math.abs(x[0]) != 0) { xsmall = Math.abs(x[0]); } else { xsmall = 1; }
+	ymin = parseFloat(x[nr]); ymax = parseFloat(x[nr]);
+	if (Math.abs(x[nr]) != 0) { ysmall = Math.abs(x[nr]); } else { ysmall = 1; }
+	for (var i = 0; i < nr; i++) {
+		var bf = parseFloat(x[i]);
+		if (bf > xmax) { xmax = bf; }
+		if (bf < xmin) { xmin = bf; }
+		if (Math.abs(bf) < xsmall) { xsmall = Math.abs(bf); }
+		for (var j = 1; j < Math.round(x.length / nr); j++) { // all curves?
+			if (channels[j].selected == "1" && (j == 7)) {
+				var af = parseFloat(x[j * nr + i]);
+				if (af > ymax) { ymax = af; }
+				if (af < ymin) { ymin = af; }
+				if (Math.abs(af) < ysmall) { ysmall = Math.abs(af); }
+			}
+		}
+	}
+	// alert(x.length+" "+nr+" "+xmin+" "+xmax+" "+ymin+" "+ymax);
+	// Resize min,max for axis grid, x -axis could be other index
+
+	if ((xlinlog == "lin") || (xlinlog == "linO")) {
+		chartO.xstyp = 0;
+		if (xlinlog == "linO") {
+			xmax = - channels[xAxisIndex].offset + channels[xAxisIndex].range * 5;
+			xmin = - channels[xAxisIndex].offset - channels[xAxisIndex].range * 5;
+			// grid and fine grid
+			Deltax = channels[xAxisIndex].range; SDeltax = channels[xAxisIndex].range / 10;
+		} else {
+			scale_lin_max_min(xmax, xmin, xscaling);
+			// Set scaling and offset
+			xmax = oMax; xmin = oMin;
+			Deltax = Norm_Delta; SDeltax = Small_Delta;
+		}
+		scalex_fk = canv_obj.width * perSizeX / (xmax - xmin);
+		scalex_of = xll - xmin * scalex_fk;
+		channels[xAxisIndex].factor = scalex_fk;
+		channels[xAxisIndex].offScale = scalex_of;
+	} else {  // not changed hopefully is ok
+		chartO.xstyp = 1;
+		scale_log_max_min(xmax, xsmall, xscaling);
+		xmax = oMax; xmin = oMin;
+		Deltax = Norm_Delta; SDeltax = Small_Delta;
+		scalex_fk = canv_obj.width * perSizeX / (Math.log(Math.abs(xmax)) / Math.log(10) - Math.log(Math.abs(xmin)) / Math.log(10));
+		scalex_of = xll - Math.log(Math.abs(xmin)) / Math.log(10) * scalex_fk;
+	}
+	// alert(xmax + "," + xmin + "," + perSizeX + "," + xAxisIndex´+ "," + Deltax);
+	if ((ylinlog == "lin") || (ylinlog == "linO")) {
+		chartO.ystyp = 0;
+
+		// Feste Skalierung für digitale Signale: 0 bis 1
+		ymin = 0;
+		ymax = 1;
+		Deltay = 1;
+		SDeltay = 1;
+
+		scaley_fk = canv_obj.height * perSizeY / (ymax - ymin);
+		scaley_of = yur + ymin * scaley_fk;
+
+		for (var kk = 0; kk < channels.length; kk++) {
+			if (kk != xAxisIndex) {
+				channels[kk].factor = scaley_fk;
+				channels[kk].offScale = scaley_of;
+			}
+		}
+	} else { // logarithmische Skalierung bleibt unverändert
+		chartO.ystyp = 1;
+		scale_log_max_min(ymax, ysmall, yscaling);
+		ymax = oMax; ymin = oMin;
+		Deltay = Norm_Delta; SDeltay = Small_Delta;
+		scaley_fk = canv_obj.height * perSizeY / (Math.log(Math.abs(ymax)) / Math.log(10) - Math.log(Math.abs(ymin)) / Math.log(10));
+		scaley_of = yur + Math.log(Math.abs(ymin)) / Math.log(10) * scaley_fk;
+	}
+
+	channels[0].factor = scalex_fk;
+	channels[0].offScale = scalex_of;
+
+	// Zeichenroutine
+	chart_context.lineWidth = 2;
+	if (xlinlog == "linO") {
+		scalex_fk = channels[xAxisIndex].factor;
+		scalex_of = channels[xAxisIndex].offScale;
+	}
+
+	for (var j = 1; j < Math.round(x.length / nr); j++) {
+		if (channels[j].selected == "1" && (j == 7)) {
+			if (ylinlog == "linO") {
+				scaley_fk = channels[j].factor;
+				scaley_of = channels[j].offScale;
+			}
+			chart_context.strokeStyle = colorstr[(j - 1) % colorstr.length];
+			Draw_Marker(scalexg(x[0 + xAxisIndex * nr]), scaleyg(x[0 + j * nr]), 4, j, chart_context);
+
+			for (var i = 1; i < nr; i++) {
+				chart_context.beginPath();
+				chart_context.moveTo(scalexg(x[i - 1 + xAxisIndex * nr]), scaleyg(x[i - 1 + j * nr]));
+				chart_context.lineTo(scalexg(x[i + xAxisIndex * nr]), scaleyg(x[i + j * nr]));
+				chart_context.stroke();
+				Draw_Marker(scalexg(x[i + xAxisIndex * nr]), scaleyg(x[i + j * nr]), 4, j, chart_context);
+			}
+		}
+		currColorIndex = (Math.round(x.length / nr) - 2) % colorstr.length;
+	}
+
+	// Achsenbeschriftung
+	chart_context.lineWidth = 1;
+	chart_context.fillStyle = (xAxisIndex == 0) ? "#000000" : colorstr[xAxisIndex - 1];
+
+	if ((xlinlog == "lin") || (xlinlog == "linO")) {
+		if (xlinlog == "linO") {
+			scalex_fk = channels[xAxisIndex].factor;
+			scalex_of = channels[xAxisIndex].offScale;
+			Deltax = channels[xAxisIndex].range; SDeltax = Deltax / 10;
+			xlinlog = "lin";
+		}
+	}
+
+	Label_X_Axis(xmin, xmax, Deltax, SDeltax, chart_context, canv_obj, xlinlog, grido);
+
+	// y-Achsenbeschriftung für digitale Signale
+	chart_context.fillStyle = colorstr[activeIndex - 1];
+
+	if (ylinlog == "linO") {
+		// Fest auf 0 und 1 setzen
+		ymin = 0;
+		ymax = 1;
+		scaley_fk = channels[activeIndex].factor;
+		scaley_of = channels[activeIndex].offScale;
+		Deltay = 1;
+		SDeltay = 1;
+		ylinlog = "lin";
+	}
+
+	Label_Y_Axis(ymin, ymax, Deltay, SDeltay, chart_context, canv_obj, ylinlog, grido);
+	chart_context.fillStyle = "#000000";
+	// draw text
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'middle';
+	chart_context.textAlign = 'center';
+	chart_context.fillText(Chartname, canv_obj.width / 2, canv_obj.height * 0.05);
+
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'top';
+	chart_context.textAlign = 'center';
+	chart_context.fillText(xaxisname, canv_obj.width / 2, canv_obj.height * 0.95);
+
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'middle';
+	chart_context.textAlign = 'center';
+	//	  chart_context.fillText  (yaxisname ,canv_obj.width*0.05, canv_obj.height*0.5);
+	chart_context.save();
+	chart_context.rotate(Math.PI * 1.5);
+	chart_context.fillText(yaxisname, -canv_obj.height * 0.5, canv_obj.width * 0.02);
+	//	  chart_context.fillText  ("here" ,-50,100);
+	chart_context.restore();
+
+	//--------------------------------------------------------------------------
+	// Legende
+	// alert(legend.length+","+Math.round(x.length/nr));
+	if (legend.length > 0) { // == (Math.round(x.length/nr)-1)
+		// alert("legende");
+		var tMaxLen = legend[0].length;
+		for (var j = 1; j < Math.round(x.length / nr); j++) {
+			if (tMaxLen < legend[j - 1].length) tMaxLen = legend[j - 1].length;
+		}
+		var px = legendPos.px;  // Position Top right
+		var py = legendPos.py;   // 0.6 center
+		chart_context.fillStyle = "#FFFFFF";     // Fill regionbackground white
+		chart_context.fillRect(canv_obj.width * (0.1 + perSizeX + px), canv_obj.height * py,
+			canv_obj.width * (tMaxLen + 2) * 0.02, canv_obj.height * Math.round(x.length / nr) * 0.05)
+		chart_context.fillStyle = "#000000";     // Fill region
+		// alert("hello");  
+		for (var j = 1; j < Math.round(x.length / nr); j++) {
+			chart_context.strokeStyle = colorstr[(j - 1) % colorstr.length]; // red
+			Draw_Marker(canv_obj.width * (0.12 + perSizeX + px), canv_obj.height * (py + j * 0.05), 4, j, chart_context);
+			chart_context.textBaseline = 'middle';
+			chart_context.textAlign = 'left';
+			chart_context.fillText(legend[j - 1], canv_obj.width * (0.15 + px + perSizeX), canv_obj.height * (py + j * 0.05));
+		}
+	}
+	// show areas    
+	// chart_context.clearRect(0,0,canv_obj.width,canv_obj.height);
+	// 20% are for labels
+	// xll=0.18*canv_obj.width;
+	// xur= (0.18+perSizeX)*canv_obj.width;
+	// yll=0.1*canv_obj.height;
+	// yur=(0.1+perSizeY)*canv_obj.height;
+	chart_context.strokeStyle = "#99ff33"; // light green
+	var xb = canv_obj.width * 0.05;
+	var yb = canv_obj.height * 0.05;
+	// chart_context.beginPath();
+	// chart_context.rect(xll - xb,yll,xb,canv_obj.height*perSizeY); //left side
+	// chart_context.stroke();
+	// chart_context.beginPath();
+	// chart_context.rect(xll,yur,xur-xll,yb); // under x axis bottom
+	// chart_context.stroke();
+	// chart_context.strokeStyle = "#ff80df"; // light pink for cursors
+	// chart_context.beginPath();
+	// chart_context.rect(xur,yll,xb,canv_obj.height*perSizeY); // right side
+	// chart_context.stroke();
+	// chart_context.beginPath();
+	// chart_context.rect(xll,yll-yb,xur-xll,yb); // above graph x axis top
+	// chart_context.stroke();
+}
+
+function ScatterPlotD(Chartid, Chartname, x, nr, xaxisname, xlinlog, xscaling, yaxisname, ylinlog, yscaling, grido,
+	xAxisIndex, activeIndex, channels) {      //         blue    green  red  pink dgreen dviolett yellow lblue    
+	var colorstr = ['#0000ff', '#00a000', '#ff0000', '#ff00ff', '#007070', '#700070', '#ffff00', '#00ffff']
+	var colorstr = ['#FF8C00', '#0000FF', '#FF1493', '#008000', '#FF4500', '#4682B4', '#DC143C', '#ABABAB']
+	var canv_obj = document.getElementById(Chartid);
+	var xy;
+	var xmin, xmax, ymin, ymax, ysmall, xsmall, Deltax, Deltay, SDeltax, SDeltay;
+	currColorIndex = 0;
+	Chart_name = Chartname;
+	if (!canv_obj) {
+		canv_obj = Chartid;
+		// alert('Error: I cannot find the canvas element!');
+		// return;
+	}
+	if (!canv_obj.getContext) {
+		alert('Error: no canvas.getContext!');
+		return;
+	}
+	// Get the 2D canvas context.
+	chart_context = canv_obj.getContext('2d');
+	if (!chart_context) {
+		alert('Error: failed to getContext!');
+		return;
+	}
+	chart_context.clearRect(0, 0, canv_obj.width, canv_obj.height);
+	// 20% are for labels
+	xll = 0.18 * canv_obj.width;
+	xur = (0.18 + perSizeX) * canv_obj.width;
+	yll = 0.1 * canv_obj.height;
+	yur = (0.1 + perSizeY) * canv_obj.height;
+	chart_context.beginPath();
+	chart_context.strokeStyle = "#000000"; // black
+	chart_context.rect(xll, yll, canv_obj.width * perSizeX, canv_obj.height * perSizeY);
+	chart_context.stroke();
+
+	// Find min and max (optional)
+	xmin = parseFloat(x[0]); xmax = parseFloat(x[0]);
+	if (Math.abs(x[0]) != 0) { xsmall = Math.abs(x[0]); } else { xsmall = 1; }
+	ymin = parseFloat(x[nr]); ymax = parseFloat(x[nr]);
+	if (Math.abs(x[nr]) != 0) { ysmall = Math.abs(x[nr]); } else { ysmall = 1; }
+	for (var i = 0; i < nr; i++) {
+		var bf = parseFloat(x[i]);
+		if (bf > xmax) { xmax = bf; }
+		if (bf < xmin) { xmin = bf; }
+		if (Math.abs(bf) < xsmall) { xsmall = Math.abs(bf); }
+		for (var j = 1; j < Math.round(x.length / nr); j++) { // all curves?
+			if (channels[j].selected == "1" && (j == 8)) {
+				var af = parseFloat(x[j * nr + i]);
+				if (af > ymax) { ymax = af; }
+				if (af < ymin) { ymin = af; }
+				if (Math.abs(af) < ysmall) { ysmall = Math.abs(af); }
+			}
+		}
+	}
+	// alert(x.length+" "+nr+" "+xmin+" "+xmax+" "+ymin+" "+ymax);
+	// Resize min,max for axis grid, x -axis could be other index
+
+	if ((xlinlog == "lin") || (xlinlog == "linO")) {
+		chartO.xstyp = 0;
+		if (xlinlog == "linO") {
+			xmax = - channels[xAxisIndex].offset + channels[xAxisIndex].range * 5;
+			xmin = - channels[xAxisIndex].offset - channels[xAxisIndex].range * 5;
+			// grid and fine grid
+			Deltax = channels[xAxisIndex].range; SDeltax = channels[xAxisIndex].range / 10;
+		} else {
+			scale_lin_max_min(xmax, xmin, xscaling);
+			// Set scaling and offset
+			xmax = oMax; xmin = oMin;
+			Deltax = Norm_Delta; SDeltax = Small_Delta;
+		}
+		scalex_fk = canv_obj.width * perSizeX / (xmax - xmin);
+		scalex_of = xll - xmin * scalex_fk;
+		channels[xAxisIndex].factor = scalex_fk;
+		channels[xAxisIndex].offScale = scalex_of;
+	} else {  // not changed hopefully is ok
+		chartO.xstyp = 1;
+		scale_log_max_min(xmax, xsmall, xscaling);
+		xmax = oMax; xmin = oMin;
+		Deltax = Norm_Delta; SDeltax = Small_Delta;
+		scalex_fk = canv_obj.width * perSizeX / (Math.log(Math.abs(xmax)) / Math.log(10) - Math.log(Math.abs(xmin)) / Math.log(10));
+		scalex_of = xll - Math.log(Math.abs(xmin)) / Math.log(10) * scalex_fk;
+	}
+	// alert(xmax + "," + xmin + "," + perSizeX + "," + xAxisIndex´+ "," + Deltax);
+	if ((ylinlog == "lin") || (ylinlog == "linO")) {
+		chartO.ystyp = 0;
+
+		// Feste Skalierung für digitale Signale: 0 bis 1
+		ymin = 0;
+		ymax = 1;
+		Deltay = 1;
+		SDeltay = 1;
+
+		scaley_fk = canv_obj.height * perSizeY / (ymax - ymin);
+		scaley_of = yur + ymin * scaley_fk;
+
+		for (var kk = 0; kk < channels.length; kk++) {
+			if (kk != xAxisIndex) {
+				channels[kk].factor = scaley_fk;
+				channels[kk].offScale = scaley_of;
+			}
+		}
+	} else { // logarithmische Skalierung bleibt unverändert
+		chartO.ystyp = 1;
+		scale_log_max_min(ymax, ysmall, yscaling);
+		ymax = oMax; ymin = oMin;
+		Deltay = Norm_Delta; SDeltay = Small_Delta;
+		scaley_fk = canv_obj.height * perSizeY / (Math.log(Math.abs(ymax)) / Math.log(10) - Math.log(Math.abs(ymin)) / Math.log(10));
+		scaley_of = yur + Math.log(Math.abs(ymin)) / Math.log(10) * scaley_fk;
+	}
+
+	channels[0].factor = scalex_fk;
+	channels[0].offScale = scalex_of;
+
+	// Zeichenroutine
+	chart_context.lineWidth = 2;
+	if (xlinlog == "linO") {
+		scalex_fk = channels[xAxisIndex].factor;
+		scalex_of = channels[xAxisIndex].offScale;
+	}
+
+	for (var j = 1; j < Math.round(x.length / nr); j++) {
+		if (channels[j].selected == "1" && (j == 8)) {
+			if (ylinlog == "linO") {
+				scaley_fk = channels[j].factor;
+				scaley_of = channels[j].offScale;
+			}
+			chart_context.strokeStyle = colorstr[(j - 1) % colorstr.length];
+			Draw_Marker(scalexg(x[0 + xAxisIndex * nr]), scaleyg(x[0 + j * nr]), 4, j, chart_context);
+
+			for (var i = 1; i < nr; i++) {
+				chart_context.beginPath();
+				chart_context.moveTo(scalexg(x[i - 1 + xAxisIndex * nr]), scaleyg(x[i - 1 + j * nr]));
+				chart_context.lineTo(scalexg(x[i + xAxisIndex * nr]), scaleyg(x[i + j * nr]));
+				chart_context.stroke();
+				Draw_Marker(scalexg(x[i + xAxisIndex * nr]), scaleyg(x[i + j * nr]), 4, j, chart_context);
+			}
+		}
+		currColorIndex = (Math.round(x.length / nr) - 2) % colorstr.length;
+	}
+
+	// Achsenbeschriftung
+	chart_context.lineWidth = 1;
+	chart_context.fillStyle = (xAxisIndex == 0) ? "#000000" : colorstr[xAxisIndex - 1];
+
+	if ((xlinlog == "lin") || (xlinlog == "linO")) {
+		if (xlinlog == "linO") {
+			scalex_fk = channels[xAxisIndex].factor;
+			scalex_of = channels[xAxisIndex].offScale;
+			Deltax = channels[xAxisIndex].range; SDeltax = Deltax / 10;
+			xlinlog = "lin";
+		}
+	}
+
+	Label_X_Axis(xmin, xmax, Deltax, SDeltax, chart_context, canv_obj, xlinlog, grido);
+
+	// y-Achsenbeschriftung für digitale Signale
+	chart_context.fillStyle = colorstr[activeIndex - 1];
+
+	if (ylinlog == "linO") {
+		// Fest auf 0 und 1 setzen
+		ymin = 0;
+		ymax = 1;
+		scaley_fk = channels[activeIndex].factor;
+		scaley_of = channels[activeIndex].offScale;
+		Deltay = 1;
+		SDeltay = 1;
+		ylinlog = "lin";
+	}
+
+	Label_Y_Axis(ymin, ymax, Deltay, SDeltay, chart_context, canv_obj, ylinlog, grido);
+	chart_context.fillStyle = "#000000";
+	// draw text
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'middle';
+	chart_context.textAlign = 'center';
+	chart_context.fillText(Chartname, canv_obj.width / 2, canv_obj.height * 0.05);
+
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'top';
+	chart_context.textAlign = 'center';
+	chart_context.fillText(xaxisname, canv_obj.width / 2, canv_obj.height * 0.95);
+
+	chart_context.font = 'bold ' + c_fontsize + 'px sans-serif';
+	chart_context.textBaseline = 'middle';
+	chart_context.textAlign = 'center';
+	//	  chart_context.fillText  (yaxisname ,canv_obj.width*0.05, canv_obj.height*0.5);
+	chart_context.save();
+	chart_context.rotate(Math.PI * 1.5);
+	chart_context.fillText(yaxisname, -canv_obj.height * 0.5, canv_obj.width * 0.02);
+	//	  chart_context.fillText  ("here" ,-50,100);
+	chart_context.restore();
+
+	//--------------------------------------------------------------------------
+	// Legende
+	// alert(legend.length+","+Math.round(x.length/nr));
+	if (legend.length > 0) { // == (Math.round(x.length/nr)-1)
+		// alert("legende");
+		var tMaxLen = legend[0].length;
+		for (var j = 1; j < Math.round(x.length / nr); j++) {
+			if (tMaxLen < legend[j - 1].length) tMaxLen = legend[j - 1].length;
+		}
+		var px = legendPos.px;  // Position Top right
+		var py = legendPos.py;   // 0.6 center
+		chart_context.fillStyle = "#FFFFFF";     // Fill regionbackground white
+		chart_context.fillRect(canv_obj.width * (0.1 + perSizeX + px), canv_obj.height * py,
+			canv_obj.width * (tMaxLen + 2) * 0.02, canv_obj.height * Math.round(x.length / nr) * 0.05)
+		chart_context.fillStyle = "#000000";     // Fill region
+		// alert("hello");  
+		for (var j = 1; j < Math.round(x.length / nr); j++) {
+			chart_context.strokeStyle = colorstr[(j - 1) % colorstr.length]; // red
+			Draw_Marker(canv_obj.width * (0.12 + perSizeX + px), canv_obj.height * (py + j * 0.05), 4, j, chart_context);
+			chart_context.textBaseline = 'middle';
+			chart_context.textAlign = 'left';
+			chart_context.fillText(legend[j - 1], canv_obj.width * (0.15 + px + perSizeX), canv_obj.height * (py + j * 0.05));
+		}
+	}
+	// show areas    
+	// chart_context.clearRect(0,0,canv_obj.width,canv_obj.height);
+	// 20% are for labels
+	// xll=0.18*canv_obj.width;
+	// xur= (0.18+perSizeX)*canv_obj.width;
+	// yll=0.1*canv_obj.height;
+	// yur=(0.1+perSizeY)*canv_obj.height;
+	chart_context.strokeStyle = "#99ff33"; // light green
+	var xb = canv_obj.width * 0.05;
+	var yb = canv_obj.height * 0.05;
+	// chart_context.beginPath();
+	// chart_context.rect(xll - xb,yll,xb,canv_obj.height*perSizeY); //left side
+	// chart_context.stroke();
+	// chart_context.beginPath();
+	// chart_context.rect(xll,yur,xur-xll,yb); // under x axis bottom
+	// chart_context.stroke();
+	// chart_context.strokeStyle = "#ff80df"; // light pink for cursors
+	// chart_context.beginPath();
+	// chart_context.rect(xur,yll,xb,canv_obj.height*perSizeY); // right side
+	// chart_context.stroke();
+	// chart_context.beginPath();
+	// chart_context.rect(xll,yll-yb,xur-xll,yb); // above graph x axis top
+	// chart_context.stroke();
+}
+
 //##################### End ScatterPlotO
 
 //########################

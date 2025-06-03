@@ -1,4 +1,4 @@
-<html lang="en">
+﻿<html lang="en">
   <head>
 <meta name="description" content="User interface of EEBench an open source, open access low cost
    oscilloscope and arbitrary waveform generator based on FPGA BASYS3 and nodejs JavaScript" />
@@ -6,6 +6,7 @@
 <link rel="stylesheet" type="text/css" href="../css/style.css" media="all" />
     <title>Node EEBench</title>
  <style>
+
 .slidecontainer {
   width: 100%;
 }
@@ -140,6 +141,9 @@ td.top {vertical-align: top;}
     <td>OSC2:</td><td> XADC2 (12 Bit, 1 MSps / 8)</td>
     <td>OSC3:</td><td> XADC3 (12 Bit, 1 MSps / 8)</td>
     <td>OSC4:</td><td> XADC4 (12 Bit, 1 MSps / 8)</td>
+	<td>OSC5:</td><td> XADC5 (12 Bit, 1 MSps / 8)</td>
+	<td>OSC6:</td><td> XADC6 (12 Bit, 1 MSps / 8)</td>
+	<td>OSC7:</td><td> XADC7 (12 Bit, 1 MSps / 8)</td>
   </tr>
   <tr>
     <td colspan="2">OSC Sampling time: </td>
@@ -218,11 +222,11 @@ td.top {vertical-align: top;}
 	  </td></tr>
 <tr><td style="vertical-align:top">"U"</td>
     <td> (length = 1) start sending data: chunks of block of data are sent: 
-     AWG (aW), OSC1 (o1), OSC2 (o2), OSC3 (o3), OSC4 (o4); 16 bit each; 20 hex values <br>
+     AWG (aW), OSC1 (o1), OSC2 (o2), OSC3 (o3), OSC4 (o4), OSC5 (o5), OSC6 (o6), OSC7 (o7); 16 bit each; 20 hex values <br>
      The first transmission has the current index (cP) stored. One extra transmission, 
 	 because there can be an ongoing conversion at the current index.<br>	
      "U01230123012301230123YX01230123012301230123Y..."<br>
-      U(o4)(o3)(cP)(o1)(AW)YX(o4)(o3)(o2)(o1)(AW)Y...<br>
+      U(o7)(o6)(o5)(o4)(o3)(cP)(o1)(AW)YX(o7)(o6)(o5)(o4)(o3)(o2)(o1)(AW)Y...<br>
     </td></tr>	  
 <tr><td>"V"</td><td> Connect switches to output.</td></tr>
 <tr><td style="vertical-align:top">"O"</td>
@@ -370,14 +374,17 @@ Number of periods per 64k? samples instead of frequency<br>
      </select>
      </td>
      <td class="bo"> xy  x-axis
-      <select name="xyAxis" id="xyAxis" onchange="changeXAxis()">
-       <option value="0" selected> Time </option>
-       <option value="1"> AWG1 </option>
-       <option value="2"> C1 </option>
-       <option value="3"> C2 </option>
-       <option value="4"> C3 </option>
-       <option value="5"> C4 </option>
-	  </select>
+		 <select name="xyAxis" id="xyAxis" onchange="changeXAxis()">
+			 <option value="0" selected> Time </option>
+			 <option value="1"> AWG1 </option>
+			 <option value="2"> C1 </option>
+			 <option value="3"> C2 </option>
+			 <option value="4"> C3 </option>
+			 <option value="5"> D1 </option>
+			 <option value="6"> D2 </option>
+			 <option value="7"> D3 </option>
+			 <option value="8"> D4 </option>
+		 </select>
 	 </td>
      <td class="bo"> Unit:
       <select id="currUnit" onchange="changeUnit()">
@@ -389,13 +396,16 @@ Number of periods per 64k? samples instead of frequency<br>
  <tr>
    <td class="bo">Trigger</td>
    <td class="bo">Source &nbsp; 
-      <select name="trgSrc" id="trgSrc">
-       <option value="1"> AWG1 </option>
-       <option value="2"> C1 </option>
-       <option value="3"> C2 </option>
-       <option value="4"> C3 </option>
-       <option value="5"> C4 </option>
-	  </select>
+	   <select name="trgSrc" id="trgSrc">
+		   <option value="1"> AWG1 </option>
+		   <option value="2"> C1 </option>
+		   <option value="3"> C2 </option>
+		   <option value="4"> C3 </option>
+		   <option value="5"> D1 </option>
+		   <option value="6"> D2 </option>
+		   <option value="7"> D3 </option>
+		   <option value="8"> D4 </option>
+	   </select>
    </td>
    <td class="bo">Condition &nbsp; 
       <select name="trgEdge" id="trgEdge">
@@ -422,60 +432,118 @@ Number of periods per 64k? samples instead of frequency<br>
 <table>
 <tr>
 <td  class="top">
- <table>
- <tr> <td>X Axis</td></tr>
- <tr> <td class="bo0" id="time"><input type="checkbox" id="cTime" value="value" checked> Time<br>
- 	    <table><tr><td>
-		  Position: </td><td><input type="text" value="0 s" size="5" id="posVal" onkeyup="readCRX(e,'pos','s')"></td><td> 
-		  <img id="posValCT" style="display:block" src="ImagesS/SelectListA.png" width="16" height="16" 
-		       onclick="comboBox('pos','Val','CB',2,'s')">
-          <div id="posValCB" style="display:none">
-          <select id="posValS" onchange="comboBox('pos','Val','CT',2,'s')"></select>
-		  </div>
-		  </td></tr>
-		  <tr><td>Base: </td><td><input type="text" value="200 us/div" size="5" id="baseVal" onkeyup="readCRX(e,'base','s/div')"></td><td> 
-		  <img id="baseValCT" style="display:block" src="ImagesS/SelectListA.png" width="16" height="16" onclick="comboBox('base','Val','CB',2,'s')">
-          <div id="baseValCB" style="display:none">
-          <select id="baseValS" onchange="comboBox('base','Val','CT',2,'s')"></select>
-          </div>
-		  </td></tr>
-		  </table>
- </td></tr>
- <tr> <td>=====&nbsp;Y&nbsp;Axis&nbsp;&nbsp;===========</td></tr>
- <tr> <td class="bo1" id="AWG1">
-        <input type="checkbox" id="cAWG1" value="value" checked onclick="toggleCheck('AWG1',1)">
-	      AWG1 Unit: 
-	  </td></tr>
- <tr> <td class="bo2" id="C1">
-        <input type="checkbox" id="cC1" value="value">
-	      C1
-	  </td></tr>
- <tr> <td class="bo3" id="C2">
-        <input type="checkbox" id="cC2" value="value">
-	      C2</td></tr>
- <tr> <td class="bo4" id="C3">
-        <input type="checkbox" id="cC3" value="value">
-	      C3</td></tr>
- <tr> <td class="bo5" id="C4">
-        <input type="checkbox" id="cC4" value="value">
-	      C4</td></tr>
- <tr> <td class="bo6" id="M1">
-        <input type="checkbox" id="cM1" value="value">
-	      M1</td></tr>
- </table>
-</td> 
-   <td class="top" rowspan="6"> 
-   <table>
-   <tr><td class="bo1" onclick="activeChan(1)">AWG</td><td class="bo2" onclick="activeChan(2)">C1</td>
-       <td class="bo3" onclick="activeChan(3)">C2</td><td class="bo4" onclick="activeChan(4)">C3</td>
-	   <td class="bo5" onclick="activeChan(5)">C4</td><td class="bo6" onclick="activeChan(6)"> M1</td>
-	   <td> <div id="statusOSC"></div></td>
-   </tr>
-   </table>
-            <canvas id="OSC" width="600" height="350"></canvas><br>
-			<span id="mouse">Mouse</span>
-			<span id="dataXY">Data XY</span>
+	<table>
+		<tr> <td>X Axis</td></tr>
+		<tr>
+			<td class="bo0" id="time">
+				<input type="checkbox" id="cTime" value="value" checked> Time<br>
+				<table>
+					<tr>
+						<td>
+							Position:
+						</td>
+						<td><input type="text" value="0 s" size="5" id="posVal" onkeyup="readCRX(e,'pos','s')"></td>
+						<td>
+							<img id="posValCT" style="display:block" src="ImagesS/SelectListA.png" width="16" height="16"
+								 onclick="comboBox('pos','Val','CB',2,'s')">
+							<div id="posValCB" style="display:none">
+								<select id="posValS" onchange="comboBox('pos','Val','CT',2,'s')"></select>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td>Base: </td>
+						<td><input type="text" value="200 us/div" size="5" id="baseVal" onkeyup="readCRX(e,'base','s/div')"></td>
+						<td>
+							<img id="baseValCT" style="display:block" src="ImagesS/SelectListA.png" width="16" height="16" onclick="comboBox('base','Val','CB',2,'s')">
+							<div id="baseValCB" style="display:none">
+								<select id="baseValS" onchange="comboBox('base','Val','CT',2,'s')"></select>
+							</div>
+						</td>
+					</tr>
+				</table>
 			</td>
+		</tr>
+		<tr> <td>=====&nbsp;Y&nbsp;Axis&nbsp;&nbsp;===========</td></tr>
+		<tr>
+			<td class="bo1" id="AWG1">
+				<input type="checkbox" id="cAWG1" value="value" checked onclick="toggleCheck('AWG1',1)">
+				AWG1 Unit:
+			</td>
+		</tr>
+		<tr>
+			<td class="bo2" id="C1">
+				<input type="checkbox" id="cC1" value="value">
+				C1
+			</td>
+		</tr>
+		<tr>
+			<td class="bo3" id="C2">
+				<input type="checkbox" id="cC2" value="value">
+				C2
+			</td>
+		</tr>
+		<tr>
+			<td class="bo4" id="C3">
+				<input type="checkbox" id="cC3" value="value">
+				C3
+			</td>
+		</tr>
+		<tr>
+			<td class="bo5" id="D1">
+				<input type="checkbox" id="cC4" value="value">
+				D1
+			</td>
+		</tr>
+		<tr>
+			<td class="bo6" id="D2">
+				<input type="checkbox" id="cC5" value="value">
+				D2
+			</td>
+		</tr>
+		<tr>
+			<td class="bo7" id="D3">
+				<input type="checkbox" id="cC6" value="value">
+				D3
+			</td>
+		</tr>
+		<tr>
+			<td class="bo8" id="D4">
+				<input type="checkbox" id="cC7" value="value">
+				D4
+			</td>
+		</tr>
+		<tr>
+			<td class="bo9" id="M1">
+				<input type="checkbox" id="cM1" value="value">
+				M1
+			</td>
+		</tr>
+	</table>
+</td> 
+<td class="top" rowspan="6">
+	<table>
+		<tr>
+			<td class="bo1" onclick="activeChan(1)">AWG</td>
+			<td class="bo2" onclick="activeChan(2)">C1</td>
+			<td class="bo3" onclick="activeChan(3)">C2</td>
+			<td class="bo4" onclick="activeChan(4)">C3</td>
+			<td class="bo5" onclick="activeChan(5)">D1</td>
+			<td class="bo6" onclick="activeChan(6)">D2</td>
+			<td class="bo7" onclick="activeChan(7)">D3</td>
+			<td class="bo8" onclick="activeChan(8)">D4</td>
+			<td class="bo9" onclick="activeChan(9)"> M1</td>
+			<td> <div id="statusOSC"></div></td>
+		</tr>
+	</table>
+	<canvas id="OSC" width="600" height="350"></canvas><br>
+	<canvas id="alt_OSC1" width="600" height="120"></canvas><br><br><br>
+	<canvas id="alt_OSC2" width="600" height="120"></canvas><br><br><br>
+	<canvas id="alt_OSC3" width="600" height="120"></canvas><br><br><br>
+	<canvas id="alt_OSC4" width="600" height="120"></canvas><br><br><br>
+	<span id="mouse">Mouse</span>
+	<span id="dataXY">Data XY</span>
+</td>
 <td class="top">
  <div id="measureOSC"></div>
 </td> 
@@ -502,13 +570,16 @@ Math function, Fit function<br>
  </tr>
   <tr>
    <td class="bo">Channel &nbsp; 
-      <select name="fftSrc" id="fftSrc" onclick="calcHarmonics()">
-       <option value="1"> AWG1 </option>
-       <option value="2"> C1 </option>
-       <option value="3"> C2 </option>
-       <option value="4"> C3 </option>
-       <option value="5"> C4 </option>
-	  </select>
+	   <select name="fftSrc" id="fftSrc" onclick="calcHarmonics()">
+		   <option value="1"> AWG1 </option>
+		   <option value="2"> C1 </option>
+		   <option value="3"> C2 </option>
+		   <option value="4"> C3 </option>
+		   <option value="5"> D1 </option>
+		   <option value="6"> D2 </option>
+		   <option value="7"> D3 </option>
+		   <option value="8"> D4 </option>
+	   </select>
    </td>
   </tr>
   <tr>
@@ -588,7 +659,10 @@ Therefore step size is 19858/4096 = 5<br>
        <option value="2"> C1 </option>
        <option value="3"> C2 </option>
        <option value="4"> C3 </option>
-       <option value="5"> C4 </option>
+       <option value="5"> D1 </option>
+		<option value="6"> D2 </option>
+		  <option value="7"> D3 </option>
+		  <option value="8"> D4 </option>
 	  </select>
    </td>
   </tr>
@@ -642,9 +716,118 @@ separated values in the text input field.<br>
 <div id="tab9" class="tabX" style="display:none">
 <h2>Bodeplot</h2>
 </div>
+<!---------------------- Digital I/O --------------------------------------------------------->
 
 <div id="tab10" class="tabX" style="display:none">
-<h2>Digital I/O</h2>
+	<h2>Digital I/O</h2><br /><br />
+	<div id="cmd"></div>
+
+	<input type="submit" value="Send Data" onclick="dIO();"></input><br>
+
+	<div class="bo">
+		Digital Port 1:
+		<select id="dig_port_1_dir">
+			<option value="1">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_1_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="1">High / Pull-Up On</option>
+		</select>
+		<span id="status1">Unknown</span>
+	</div>
+	<br>
+
+	<div class="bo">
+		Digital Port 2:
+		<select id="dig_port_2_dir">
+			<option value="2">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_2_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="2">High / Pull-Up On</option>
+		</select>
+	</div>
+	<br>
+
+	<div class="bo">
+		Digital Port 3:
+		<select id="dig_port_3_dir">
+			<option value="4">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_3_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="4">High / Pull-Up On</option>
+		</select>
+	</div>
+	<br>
+
+	<div class="bo">
+		Digital Port 4:
+		<select id="dig_port_4_dir">
+			<option value="8">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_4_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="8">High / Pull-Up On</option>
+		</select>
+	</div>
+	<br>
+
+	<div class="bo">
+		Digital Port 5:
+		<select id="dig_port_5_dir">
+			<option value="16">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_5_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="16">High / Pull-Up On</option>
+		</select>
+	</div><br>
+
+	<div class="bo">
+		Digital Port 6:
+		<select id="dig_port_6_dir">
+			<option value="32">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_6_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="32">High / Pull-Up On</option>
+		</select>
+	</div><br>
+
+	<div class="bo">
+		Digital Port 7:
+		<select id="dig_port_7_dir">
+			<option value="64">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_7_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="64">High / Pull-Up On</option>
+		</select>
+	</div><br>
+
+	<div class="bo">
+		Digital Port 8:
+		<select id="dig_port_8_dir">
+			<option value="128">Input</option>
+			<option value="0">Output</option>
+		</select>
+		<select id="dig_port_8_param">
+			<option value="0">Low / Pull-Up Off</option>
+			<option value="128">High / Pull-Up On</option>
+		</select>
+	</div>
+
+
+
+
 </div>
 
 <div id="tab11" class="tabX" style="display:none">
@@ -663,7 +846,7 @@ Digital signal processing and control loops<br>
 
 <script>
 
- var srcX = ["AWG","OSC4", "OSC3","OSC2","OSC1"];
+    var srcX = ["AWG", "OSC7", "OSC6","OSC5","OSC4", "OSC3","OSC2","OSC1"];
  var dataOSC = [];  // expecting 512 times 5 data points
  var dataIndex = 1;
 
@@ -765,6 +948,38 @@ function runOsc() {
 	 sendCmd();
 	 busyOsc = 1;  // new data going on
    }	
+}
+
+	function dIO() {
+        let d1_d = parseInt(document.getElementById("dig_port_1_dir").value);
+        let d2_d = parseInt(document.getElementById("dig_port_2_dir").value);
+        let d3_d = parseInt(document.getElementById("dig_port_3_dir").value);
+        let d4_d = parseInt(document.getElementById("dig_port_4_dir").value);
+		let d5_d = parseInt(document.getElementById("dig_port_5_dir").value);
+		let d6_d = parseInt(document.getElementById("dig_port_6_dir").value);
+		let d7_d = parseInt(document.getElementById("dig_port_7_dir").value);
+        let d8_d = parseInt(document.getElementById("dig_port_8_dir").value);
+
+        let d1_l = parseInt(document.getElementById("dig_port_1_param").value);
+        let d2_l = parseInt(document.getElementById("dig_port_2_param").value);
+        let d3_l = parseInt(document.getElementById("dig_port_3_param").value);
+        let d4_l = parseInt(document.getElementById("dig_port_4_param").value);
+		let d5_l = parseInt(document.getElementById("dig_port_5_param").value);
+        let d6_l = parseInt(document.getElementById("dig_port_6_param").value);
+        let d7_l = parseInt(document.getElementById("dig_port_7_param").value);
+        let d8_l = parseInt(document.getElementById("dig_port_8_param").value);
+
+        
+        let portMode = d1_d + d2_d + d3_d + d4_d + d5_d + d6_d + d7_d + d8_d;
+		let portLevel = d1_l + d2_l + d3_l + d4_l + d5_l + d6_l + d7_l + d8_l;
+
+
+		cmdText = "I" + decToHex(portMode, 2) + decToHex(portLevel, 2);
+		document.getElementById("cmd").innerHTML = cmdText;
+
+		sendCmd();
+
+
 }
 
 function oOp(cmd) {  // oscilloscope reading
@@ -1535,9 +1750,12 @@ createChannel("AWG1", "checked",1,0);
 createChannel("C1", "checked",2,0);
 createChannel("C2", "",3,0);
 createChannel("C3", "",4,0);
-createChannel("C4", "",5,0);
+	createChannel("D1", "", 5, 0);
+	createChannel("D2", "", 6, 0);
+	createChannel("D3", "", 7, 0);
+    createChannel("D4", "", 8, 0);
 // createChannel("M1", "",6);
-var cList = ["Time","AWG1","C1","C2","C3","C4"];
+var cList = ["Time","AWG1","C1","C2","C3","D1","D2","D3","D4"];
 
 function updateChanFields() {
   // Time
@@ -1596,7 +1814,11 @@ function drawGrid(id) {
     }      
 }
 
-window.addEventListener("load",drawGrid('OSC'));
+window.addEventListener("load", drawGrid('OSC'));
+window.addEventListener("load", drawGrid('alt_OSC1'));
+window.addEventListener("load", drawGrid('alt_OSC2'));
+window.addEventListener("load", drawGrid('alt_OSC3'));
+window.addEventListener("load", drawGrid('alt_OSC4'));
 window.addEventListener("load",drawGrid('fftChart'));
 
 //  
@@ -1605,7 +1827,11 @@ window.addEventListener("load",drawGrid('fftChart'));
  var dataMax = 512;
  var dataOSC1 =[];    // all sorted data
  var dataOSC2 =[];    // final oscilloscope data voltage extracted with trigger 
- var dataOSC3 =[];    // final oscilloscope data code extracted with trigger 
+ var dataOSC3 = [];    // final oscilloscope data code extracted with trigger 
+ var dataOSC4 = [];
+ var dataOSC5 = [];
+ var dataOSC6 = [];
+ var dataOSC7 = [];
  var xAxisIndex = 0;
  var activeIndex = 1;
  
@@ -1615,7 +1841,7 @@ var mouseCurrX = 0;
 var mouseCurrY = 0;
 var offsetStart;
 var widthX, heightY;
-var lines = new Array("pos","offAWG1","offC1","offC2","offC3","offC4","offM1");
+    var lines = new Array("pos", "offAWG1", "offC1", "offC2", "offC3", "offD1", "offD2", "offD3", "offD4", "offM1");
 var sprites = new Array();  // trigger pos, level, active curve 0, x1, x2 cursor, y1,y2 cursor
 // each sprite has: lower left, upper right position; curve color;  type x,x2,y1,y2,filled triangle right, left top, bottom TR,TL,TT, TB
 // each sprite has a callback fnction
@@ -1702,17 +1928,62 @@ function changeXAxis() {
 }
 
 function updatePlot(){
-   if (currUnit == 0) {  // code
-      ScatterPlotO("OSC","Oszilloskop",dataOSC3,dataMax/2,
-		                     "time","linO","Minmax",
-			                 "Amplitude","linO","auto","Grid",
-							 xAxisIndex, activeIndex, channels);
-   } else {  // voltage
-      ScatterPlotO("OSC","Oszilloskop",dataOSC2,dataMax/2,
-		                     "time","linO","Minmax",
-			                 "Amplitude","linO","auto","Grid",
-							 xAxisIndex, activeIndex, channels);
-   }
+    if (currUnit == 0) {  // code
+        ScatterPlotO("OSC", "Oszilloskop", dataOSC3, dataMax / 2,
+            "", "linO", "Minmax",
+            "Amplitude", "linO", "auto", "Grid",
+            xAxisIndex, activeIndex, channels);
+    } else {  // voltage
+        ScatterPlotO("OSC", "Oszilloskop", dataOSC2, dataMax / 2,
+            "", "linO", "Minmax",
+            "Amplitude", "linO", "auto", "Grid",
+            xAxisIndex, activeIndex, channels);
+	}
+	// Ab hier Digital
+    if (currUnit == 0) {  // code
+        ScatterPlotA("alt_OSC1", "", dataOSC3, dataMax / 2,
+            "", "linO", "Minmax",
+            "Amplitude", "linO", "auto", "Grid",
+            xAxisIndex, activeIndex, channels);
+    } else {  // voltage
+        ScatterPlotA("alt_OSC1", "", dataOSC2, dataMax / 2,
+            "", "linO", "Minmax",
+            "Amplitude", "linO", "auto", "Grid",
+            xAxisIndex, activeIndex, channels);
+	}
+    if (currUnit == 0) {  // code
+        ScatterPlotB("alt_OSC2", "", dataOSC3, dataMax / 2,
+            "", "linO", "Minmax",
+            "Amplitude", "linO", "auto", "Grid",
+            xAxisIndex, activeIndex, channels);
+    } else {  // voltage
+        ScatterPlotB("alt_OSC2", "", dataOSC2, dataMax / 2,
+            "", "linO", "Minmax",
+            "Amplitude", "linO", "auto", "Grid",
+            xAxisIndex, activeIndex, channels);
+	}
+    if (currUnit == 0) {  // code
+        ScatterPlotC("alt_OSC3", "", dataOSC3, dataMax / 2,
+            "", "linO", "Minmax",
+            "Amplitude", "linO", "auto", "Grid",
+            xAxisIndex, activeIndex, channels);
+    } else {  // voltage
+        ScatterPlotC("alt_OSC3", "", dataOSC2, dataMax / 2,
+            "", "linO", "Minmax",
+            "Amplitude", "linO", "auto", "Grid",
+            xAxisIndex, activeIndex, channels);
+	}
+    if (currUnit == 0) {  // code
+        ScatterPlotD("alt_OSC4", "", dataOSC3, dataMax / 2,
+            "", "linO", "Minmax",
+            "Amplitude", "linO", "auto", "Grid",
+            xAxisIndex, activeIndex, channels);
+    } else {  // voltage
+        ScatterPlotD("alt_OSC4", "", dataOSC2, dataMax / 2,
+            "", "linO", "Minmax",
+            "Amplitude", "linO", "auto", "Grid",
+            xAxisIndex, activeIndex, channels);
+    }
 }
 
 function saveData() {
@@ -1724,6 +1995,9 @@ function saveData() {
 	var cC2 = document.getElementById("cC2").checked;
 	var cC3 = document.getElementById("cC3").checked;
 	var cC4 = document.getElementById("cC4").checked;
+	var cC5 = document.getElementById("cC5").checked;
+	var cC6 = document.getElementById("cC6").checked;
+    var cC7 = document.getElementById("cC7").checked;
     // Lables
 	   tabTxt += "<tr>";
 	   tabTxt += "<td> time / s </td>"; 
@@ -1732,12 +2006,18 @@ function saveData() {
 	   if (cC2) { tabTxt += "<td> OSC2 / V</td>"; }
 	   if (cC3) { tabTxt += "<td> OSC3 / V</td>"; }
 	   if (cC4) { tabTxt += "<td> OSC4 / V</td>"; }
+		if (cC5) { tabTxt += "<td> OSC5 / V</td>"; }
+		if (cC6) { tabTxt += "<td> OSC6 / V</td>"; }
+		if (cC7) { tabTxt += "<td> OSC7 / V</td>"; }
 	   tabTxt += "<td> time code</td>"; 
 	   if (cAWG1) { tabTxt += "<td> AWG1 code </td>"; }
 	   if (cC1) { tabTxt += "<td> OSC1 code</td>"; }
 	   if (cC2) { tabTxt += "<td> OSC2 code</td>"; }
 	   if (cC3) { tabTxt += "<td> OSC3 code</td>"; }
 	   if (cC4) { tabTxt += "<td> OSC4 code</td>"; }
+	if (cC5) { tabTxt += "<td> OSC5 code/ V</td>"; }
+	if (cC6) { tabTxt += "<td> OSC6 code/ V</td>"; }
+    if (cC7) { tabTxt += "<td> OSC7 code/ V</td>"; }
 	   tabTxt += "</tr>"; 
     // values
 	for (var i = 0; i < dataMax/2; i++) {
@@ -1747,13 +2027,19 @@ function saveData() {
 	   if (cC1) { tabTxt += "<td>" + dataOSC2[i + 2 * dataMax2].toPrecision(6) + "</td>"; }
 	   if (cC2) { tabTxt += "<td>" + dataOSC2[i + 3 * dataMax2].toPrecision(6) + "</td>"; }
 	   if (cC3) { tabTxt += "<td>" + dataOSC2[i + 4 * dataMax2].toPrecision(6) + "</td>"; }
-	   if (cC4) { tabTxt += "<td>" + dataOSC2[i + 5 * dataMax2].toPrecision(6) + "</td>"; }
+		if (cC4) { tabTxt += "<td>" + dataOSC2[i + 5 * dataMax2].toPrecision(6) + "</td>"; }
+		if (cC5) { tabTxt += "<td>" + dataOSC2[i + 6 * dataMax2].toPrecision(6) + "</td>"; }
+		if (cC6) { tabTxt += "<td>" + dataOSC2[i + 7 * dataMax2].toPrecision(6) + "</td>"; }
+        if (cC7) { tabTxt += "<td>" + dataOSC2[i + 8 * dataMax2].toPrecision(6) + "</td>"; }
 	   tabTxt += "<td>" + dataOSC3[i] + "</td>"; 
 	   if (cAWG1) { tabTxt += "<td>" + dataOSC3[i + dataMax2] + "</td>"; }
 	   if (cC1) { tabTxt += "<td>" + dataOSC3[i + 2 * dataMax2] + "</td>"; }
 	   if (cC2) { tabTxt += "<td>" + dataOSC3[i + 3 * dataMax2] + "</td>"; }
 	   if (cC3) { tabTxt += "<td>" + dataOSC3[i + 4 * dataMax2] + "</td>"; }
-	   if (cC4) { tabTxt += "<td>" + dataOSC3[i + 5 * dataMax2] + "</td>"; }
+		if (cC4) { tabTxt += "<td>" + dataOSC3[i + 5 * dataMax2] + "</td>"; }
+		if (cC5) { tabTxt += "<td>" + dataOSC3[i + 6 * dataMax2] + "</td>"; }
+		if (cC6) { tabTxt += "<td>" + dataOSC3[i + 7 * dataMax2] + "</td>"; }
+        if (cC7) { tabTxt += "<td>" + dataOSC3[i + 8 * dataMax2] + "</td>"; }
 	   tabTxt += "</tr>"; 
 	}
 	   tabTxt += "</table>"; 
@@ -1781,14 +2067,20 @@ function generateData() {
        dataOSC2[i + 2 * dataMax2] = 3.3 * (1+Math.sin(i*2*Math.PI/dataMax2));
        dataOSC2[i + 3 * dataMax2] = 1.7 * Math.round((1+Math.sin(i*2*Math.PI/dataMax2)) * 128 ) / 128 ;
        dataOSC2[i + 4 * dataMax2] = 1.0 * Math.round((1+Math.sin(5*i*2*Math.PI/dataMax2)) * 2048) / 2048;
-       dataOSC2[i + 5 * dataMax2] = 0.5 * Math.round((1+Math.sin(3*i*2*Math.PI/dataMax2)) * 1024 *1024) / 1024/1024;
+		dataOSC2[i + 5 * dataMax2] = 1.0;
+		dataOSC2[i + 6 * dataMax2] = 0;
+		dataOSC2[i + 7 * dataMax2] = 1;
+        dataOSC2[i + 8 * dataMax2] = 1;
 	   // data OSC3 code values
 	   dataOSC3[i] = i;
        dataOSC3[i + dataMax2] = awgData[i];
        dataOSC3[i + 2 * dataMax2] = Math.round((1+Math.sin(i*2*Math.PI/dataMax2))*64);
        dataOSC3[i + 3 * dataMax2] = Math.round((1+Math.sin(i*2*Math.PI/dataMax2)) * 128 );
        dataOSC3[i + 4 * dataMax2] = Math.round((1+Math.sin(5*i*2*Math.PI/dataMax2)) * 2048);
-       dataOSC3[i + 5 * dataMax2] = Math.round((1+Math.sin(3*i*2*Math.PI/dataMax2)) * 64 *1024);
+		dataOSC3[i + 5 * dataMax2] = 1.0;
+		dataOSC3[i + 6 * dataMax2] = 1;
+		dataOSC3[i + 7 * dataMax2] = 0;
+        dataOSC3[i + 8 * dataMax2] = 0;
     }
     updatePlot();
 	let now = new Date();
@@ -2292,8 +2584,10 @@ function nextRamp() {
           codeOSC1 : dataOSC3[i +  2 * dataMax2],  // all channels
           codeOSC2 : dataOSC3[i +  3 * dataMax2],  // all channels
           codeOSC3 : dataOSC3[i +  4 * dataMax2],  // all channels
-          codeOSC4 : dataOSC3[i +  5 * dataMax2]  // all channels
-
+		  codeOSC4 : dataOSC3[i + 5 * dataMax2],  // all channels
+		  codeOSC5 : dataOSC3[i + 6 * dataMax2],  // all channels
+		  codeOSC6: dataOSC3[i + 7 * dataMax2],
+          codeOSC7: dataOSC3[i + 8 * dataMax2]
 	    }
 		oscObj.push(point);
 	  }	  
@@ -2327,7 +2621,10 @@ function ramp() {
        if (rampSrc == 2) oscObj[j].codeOSC = oscObj[j].codeOSC1;
        if (rampSrc == 3) oscObj[j].codeOSC = oscObj[j].codeOSC2;
        if (rampSrc == 4) oscObj[j].codeOSC = oscObj[j].codeOSC3;
-       if (rampSrc == 5) oscObj[j].codeOSC = oscObj[j].codeOSC4;
+		if (rampSrc == 5) oscObj[j].codeOSC = oscObj[j].codeOSC4;
+		if (rampSrc == 6) oscObj[j].codeOSC = oscObj[j].codeOSC5;
+		if (rampSrc == 7) oscObj[j].codeOSC = oscObj[j].codeOSC6;
+        if (rampSrc == 8) oscObj[j].codeOSC = oscObj[j].codeOSC7;
 	}
 	
 	// sort oscObj for averaging
@@ -2590,6 +2887,7 @@ function deactivateLookup() {
   }
 }
 
+
 //----------------------------------------------------------------------------------//
 //-------------------- NodeJS commands ---------------------------------------------//
 //----------------------------------------------------------------------------------//
@@ -2606,6 +2904,10 @@ var fullDataT = "";
 			dataOSC1 = [];
 			dataOSC2 = [];
 			dataOSC3 = [];
+			dataOSC4 = [];
+			dataOSC5 = [];
+			dataOSC6 = [];
+			dataOSC7 = [];
 			document.getElementById("data").innerHTML = dataY + "<br>" + hexToDec(dataX.substring(1+2*4,5+2*4));
 			  // example dataY: U4710FF0F471000000000Y   dataY:X0000000000000000D119Y
 			  dataX = dataY;  // fixed in uart_TX
@@ -2679,7 +2981,8 @@ var fullDataT = "";
 				   if (trg == 1) {
 				       val1 = dataOSC1[i + dataMax * trg] * factor * 3.3 + offset; 
 				       val2 = dataOSC1[i - 1 + dataMax * trg] * factor * 3.3 + offset; 
-				   }
+					 }
+				   
 				   if  (trgEdge == 1) {       // rising
 				      if ((val1 > val2) && (val1 >= trgLevel) && (trgLevel >= val2)) trgPos = i;
                    } else if (trgEdge == 2) { // falling
@@ -2709,27 +3012,56 @@ var fullDataT = "";
 				 var timestep = timeSampling * (timeBase + 1);     // XADC 10ns * 8 * 104 cycles conversion
 				 
 				 // voltage range AWG, OSC1, OSC2, OSC3, OSC4
-				 var factorX = [3.3, 1.0, 1.0, 1.0, 1.0]; // FPGA Range
+				 var factorX = [3.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]; // FPGA Range
 				 // if (currUnit == 0) { timestep = 1} 
                  if (boardX == 2) { // Arduino
-                   factorX = [3.3, 1.0, 1.0, 1.0, 3.3];  // Arduino range with PMOD AD2
+					 //factorX = [3.3, 1.0, 1.0, 1.0, 3.3];  // Arduino range with PMOD AD2
+                     factorX = [3.3, 1.0, 1.0, 1.0, 4096, 2048, 1024, 512];  // With DIgital IO Arduino range with PMOD AD2
 				 }
 				 for (var i=0; i<factorX.length; i++) {
 				    factorX[i] = factorX[i] * factor; 
 				 }
 			     for (var i = 0; i < dataMax2; i++) {
-					dataOSC3[i] = i;
-					dataOSC2[i] = (i - dataMax/4) * timestep;
-			        dataOSC3[i + dataMax2] = dataOSC1[ i + trgPos + (dataMax - 2)];                         // AWG code
-			        dataOSC2[i + dataMax2] = dataOSC1[ i + trgPos + (dataMax - 2)] * factorX[0] + offset; // AWG 3.3V
-			        dataOSC3[i + 2 * dataMax2] = dataOSC1[ i + trgPos + 2 * (dataMax - 2)];
-			        dataOSC2[i + 2 * dataMax2] = dataOSC1[ i + trgPos + 2 * (dataMax - 2)] * factorX[1] + offset;
-			        dataOSC3[i + 3 * dataMax2] = dataOSC1[ i + trgPos + 3 * (dataMax - 2)];
-			        dataOSC2[i + 3 * dataMax2] = dataOSC1[ i + trgPos + 3 * (dataMax - 2)] * factorX[2] + offset;
-			        dataOSC3[i + 4 * dataMax2] = dataOSC1[ i + trgPos + 4 * (dataMax - 2)];
-			        dataOSC2[i + 4 * dataMax2] = dataOSC1[ i + trgPos + 4 * (dataMax - 2)] * factorX[3] + offset;
-			        dataOSC3[i + 5 * dataMax2] = dataOSC1[ i + trgPos + 5 * (dataMax - 2)];
-			        dataOSC2[i + 5 * dataMax2] = dataOSC1[ i + trgPos + 5 * (dataMax - 2)] * factorX[4] + offset;
+					 dataOSC3[i] = i;
+					 dataOSC2[i] = (i - dataMax / 4) * timestep;
+
+					 dataOSC3[i + dataMax2] = dataOSC1[i + trgPos + (dataMax - 2)];                         // AWG code                    
+					 dataOSC2[i + dataMax2] = dataOSC1[i + trgPos + (dataMax - 2)] * factorX[0] + offset; // AWG 3.3V
+
+					 dataOSC3[i + 2 * dataMax2] = dataOSC1[i + trgPos + 2 * (dataMax - 2)];
+					 dataOSC2[i + 2 * dataMax2] = dataOSC1[i + trgPos + 2 * (dataMax - 2)] * factorX[1] + offset;
+
+					 dataOSC3[i + 3 * dataMax2] = dataOSC1[i + trgPos + 3 * (dataMax - 2)];
+					 dataOSC2[i + 3 * dataMax2] = dataOSC1[i + trgPos + 3 * (dataMax - 2)] * factorX[2] + offset;
+
+					 dataOSC3[i + 4 * dataMax2] = dataOSC1[i + trgPos + 4 * (dataMax - 2)]; 
+
+					//hier dataOsc3 ist raw von Channel 3
+					 if (dataOSC3[i + 4 * dataMax2] == 1) {
+						 document.getElementById("status1").textContent = "High";
+					 }
+					 else {
+						 document.getElementById("status1").textContent = "Low";
+					 }
+					 dataOSC2[i + 4 * dataMax2] = dataOSC1[i + trgPos + 4 * (dataMax - 2)] * factorX[3] + offset;
+
+
+                     dataOSC3[i + 5 * dataMax2] = dataOSC1[i + trgPos + 5 * (dataMax - 2)];// 0 0 0 4 >> Zeitpunkt1 = 4 , 0100 bin
+
+					//hier dataOsc3 ist raw von Channel 3	
+					 dataOSC2[i + 5 * dataMax2] = (dataOSC1[i + trgPos + 5 * (dataMax - 2)] & 1) * factorX[4] + offset;
+
+
+
+                     dataOSC2[i + 6 * dataMax2] = (dataOSC1[i + trgPos + 5 * (dataMax - 2)] & 2) * factorX[5] + offset;
+                     dataOSC2[i + 7 * dataMax2] = (dataOSC1[i + trgPos + 5 * (dataMax - 2)] & 4) * factorX[6] + offset;
+                     dataOSC2[i + 8 * dataMax2] = (dataOSC1[i + trgPos + 5 * (dataMax - 2)] & 8) * factorX[7] + offset;
+
+                     //dataOSC4[i] = i;
+					 dataOSC3[i + 5 * dataMax2] = 0x0000 + dataOSC3[i + 5 * dataMax2] & 1;
+					 dataOSC3[i + 6 * dataMax2] = dataOSC3[i + 5 * dataMax2] & 2;
+					 dataOSC3[i + 7 * dataMax2] = dataOSC3[i + 5 * dataMax2] & 4;
+					 dataOSC3[i + 8 * dataMax2] = dataOSC3[i + 5 * dataMax2] & 8;
 				 }
 				 // ready to plot
                  // ScatterPlot("OSC","Oszilloskop",dataOSC2,dataMax2,

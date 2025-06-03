@@ -1,4 +1,3 @@
-
 @echo off
 setlocal enabledelayedexpansion
 
@@ -23,15 +22,6 @@ set "PATH=%PATH%;%NODE_DIR%"
 
 :: Node-Server starten
 echo Starte Node.js-Server...
-
-REM adjust path for nodejs
-path=%path%;C:/temp/NodeEEBench/node 
-
-
-=======
-REM Starting nodejs with webserver
-path=%path%;C:/temp/NodeEEBench/node 
-
 node ServerEEBench.js
 
 :: Konsole offen halten
