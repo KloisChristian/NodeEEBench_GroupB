@@ -223,13 +223,10 @@ void sendData() {
 
 void readAnalogX(){
     // read Analog in bufVal and scale up to 16 Bit
-  bufVal[bufIndex] = analogRead(ADC_OSC1);
-  bufIndex++;
-  bufVal[bufIndex] = analogRead(ADC_OSC2);
-  bufIndex++;
+  bufVal[bufIndex+1] = analogRead(ADC_OSC1);
+  bufVal[bufIndex+2] = analogRead(ADC_OSC2);
+  bufVal[bufIndex+3] = analogRead(ADC_OSC3);
   /*
-  bufVal[bufIndex] = analogRead(ADC_OSC3);
-  bufIndex++;
   bufVal[bufIndex] = analogRead(ADC_OSC4);
   bufVal[bufIndex] = readADC();  // PMOD AD2
   bufIndex++;
@@ -239,14 +236,59 @@ void readAnalogX(){
 
 void readDigitalX(){
   // read Digital in bufVal
-
-  bufVal[bufIndex] = digitalRead(DAC_D0);
+  
+  bufVal[bufIndex] =      (digitalRead(DAC_D0) << 0) |
+                          (digitalRead(DAC_D1) << 1) |
+                          (digitalRead(DAC_D2) << 2) |
+                          (digitalRead(DAC_D3) << 3) |
+                          (digitalRead(DAC_D0) << 4) |
+                          (digitalRead(DAC_D1) << 5) |
+                          (digitalRead(DAC_D2) << 6) |
+                          (digitalRead(DAC_D3) << 7);
+  
   bufIndex++;
+  /*
   bufVal[bufIndex] = digitalRead(DAC_D1);
   bufIndex++;
-  
+  */
 }
 
+void readDigital1(){
+  // read Digital in bufVal
+  bufVal[bufIndex + 4] &= 0xFFF0;  // lösche untere 4 Bits
+  bufVal[bufIndex + 4] |= (digitalRead(DAC_D0) << 0) |
+                          (digitalRead(DAC_D1) << 1) |
+                          (digitalRead(DAC_D2) << 2) |
+                          (digitalRead(DAC_D3) << 3);
+}
+
+
+void readDigital2(){
+  // read Digital in bufVal
+  bufVal[bufIndex + 4] &= 0xFF0F;  // lösche obere 4 Bits
+  bufVal[bufIndex + 4] |= (digitalRead(DAC_D0) << 4) |
+                          (digitalRead(DAC_D1) << 5) |
+                          (digitalRead(DAC_D2) << 6) |
+                          (digitalRead(DAC_D3) << 7);
+}
+
+void readDigital3(){
+  // read Digital in bufVal
+  bufVal[bufIndex + 4] &= 0xF0FF;  // lösche obere 4 Bits
+  bufVal[bufIndex + 4] |= (digitalRead(DAC_D0) << 8) |
+                          (digitalRead(DAC_D1) << 9) |
+                          (digitalRead(DAC_D2) << 10) |
+                          (digitalRead(DAC_D3) << 11);
+}
+
+void readDigital4(){
+  // read Digital in bufVal
+  bufVal[bufIndex + 4] &= 0x0FFF;  // lösche obere 4 Bits
+  bufVal[bufIndex + 4] |= (digitalRead(DAC_D0) << 12) |
+                          (digitalRead(DAC_D1) << 13) |
+                          (digitalRead(DAC_D2) << 14) |
+                          (digitalRead(DAC_D3) << 15);
+}
 // Initialisation du module Pmod AD2
 void Init_AD7991(void)
 {
@@ -342,8 +384,11 @@ void configurePortModes(uint16_t portMode, const uint8_t* pins, uint8_t count) {
 int waitSend = 0;
 int awgMode = 0;
 int stepIndex = 0;
+unsigned long tStart, tMiddle, tEnd;
   
 void loop() {
+
+  tStart = micros();
 
   // Serial Interface input
   if (Serial.available() > 0) {
@@ -419,12 +464,20 @@ void loop() {
     bufIndex = 0;          // start at index 0
     timeBegin = micros();  // start measuring time 
   }
-  
+
+      
+  //12us
+
   // Generate Analog value sine
      awgX = (int)(offS) + (int)(ampS) * sin( TWO_PI * stepIndex * stepS / 256 / 256); // 256 * 256 steps per cycle
+  readDigital1();
+  //52us  
+  
   // Generate Analog value Triangle
      int deltaX = (stopT - startT);
      int posY = ((int)(stepT) * ((stepIndex * 256 * 3 )/ repeatT) ) % ( deltaX * 2); 
+        
+         // 55us
      if (posY > deltaX) posY = 2 * deltaX - posY;
      awgY = (int)(startT) + posY; // 256 steps per cycle
   // writing Analog
@@ -434,24 +487,40 @@ void loop() {
   } else if (awgMode == 1) { awgZ = awgY;      // Triangle
   } else if (awgMode == 2) { awgZ = awgX; }    // Sine
 
+
+
+  // 60us
   configurePortModes(portMode, pinList, 8); // Make DAC_D0 - DAC_D7 Input or Output
   
   analogWrite(DAC, awgZ);          // Write internal 12-Bit DAC
-  
-  writeDAC(awgZ);                  // Write PMOD DA2
+
+     //80us
+  writeDAC(awgZ);                  // Write PMOD 
+    readDigital2();
+    tMiddle = micros();
+   //100us
   
   //digWrite(awgZ >> 4);                  // 8 Bit
   digWrite(outputLevel);      // Write Output Level / Input - Pullup Resistor
   
   bufVal[bufIndex] = awgZ;         // write val in bufVal
-  bufIndex++;
   stepIndex++;
   stepIndex = stepIndex % 4096;
 
-  readAnalogX();
 
-  readDigitalX();
+  readDigital3();
+  // 125 us
+ 
+  readAnalogX();
+    
+
+  //readDigitalX();
+  readDigital4();
+
+  // 180us
+
   
+  bufIndex = bufIndex + 5;
   if (bufIndex >= bufSize) { 
     bufIndex = 0; cntBuf++; 
   } 
@@ -464,5 +533,24 @@ void loop() {
       waitSend = 0;
     } 
   }
- // }
+  /*
+  tEnd = micros();
+    // Berechnungen
+  unsigned long durationA = tMiddle - tStart;
+  unsigned long durationB = tEnd - tStart;
+  unsigned long totalLoop = tEnd - tStart;
+
+  // Debug-Ausgabe über die serielle Schnittstelle
+
+  
+  Serial.print("Zeit für readAnalogX: ");
+  Serial.print(durationA);
+  Serial.print(" us, readDigitalX: ");
+  Serial.print(durationB);
+  Serial.print(" us, gesamt: ");
+  Serial.print(totalLoop);
+  Serial.println(" us");
+
+  //delay(1000); // Für lesbare Ausgabe
+  */
 }
